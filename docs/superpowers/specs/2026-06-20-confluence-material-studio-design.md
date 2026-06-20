@@ -2,6 +2,10 @@
 
 Date: 2026-06-20
 
+Status: superseded as implementation authority. This remains the original brainstorming design record. Implementation should follow the split authoritative docs listed in `AGENTS.md`.
+
+Superseding MVP decision: MVP does not promise real Confluence-native page export. MVP produces `native-mapping-report.json` to explain native conversion potential.
+
 ## Summary
 
 Build a Confluence material studio for creating and editing presentation-style internal materials, not a presentation runtime and not a raw HTML IDE.
@@ -10,10 +14,10 @@ The product lets users import HTML or Markdown/outline drafts, visually edit the
 
 - Standalone self-contained HTML
 - Confluence HTML fragment
-- Confluence-native draft/report
+- Native Confluence mapping report
 - Future hosted iframe or Forge macro package
 
-The core design choice is a hybrid architecture: preserve visual output through a canonical render tree, then layer semantic metadata on top for editing tools and Confluence-native export.
+The core design choice is a hybrid architecture: preserve visual output through a canonical render tree, then layer semantic metadata on top for editing tools and native Confluence mapping analysis.
 
 ## Goals
 
@@ -66,7 +70,7 @@ The primary workflow is:
 4. Preview export targets:
    - Standalone HTML
    - Confluence constrained-width fragment
-   - Confluence-native draft/report
+   - Native Confluence mapping report
 5. Export with a compatibility report.
 
 ## Editor UX
@@ -158,7 +162,7 @@ The render tree preserves HTML-like structure and styling. Standalone HTML expor
 
 ### Semantic Overlay
 
-The semantic overlay tells the editor what a node means. It powers block-specific controls and Confluence-native export. If semantic recognition fails, the render tree still preserves the artifact for HTML export.
+The semantic overlay tells the editor what a node means. It powers block-specific controls and native Confluence mapping analysis. If semantic recognition fails, the render tree still preserves the artifact for HTML export.
 
 ## Import Pipeline
 
@@ -202,9 +206,9 @@ Fragment export balances fidelity with Confluence constraints.
 - Width, overflow, fixed positioning, viewport units, and font fallback checked
 - Includes a compatibility report and copyable fragment
 
-### Confluence-native Draft or Report
+### Native Confluence Mapping Report
 
-Native export prioritizes Confluence editability, search, reuse, and collaboration. It uses semantic overlay entries rather than raw visual preservation.
+Native mapping analysis prioritizes Confluence editability, search, reuse, and collaboration. It uses semantic overlay entries rather than raw visual preservation. In MVP this is a report, not a verified Confluence page body.
 
 Candidate mappings:
 
@@ -277,7 +281,7 @@ Example scoring:
 
 - Standalone HTML: high visual fidelity, no native Confluence editability
 - Confluence fragment: medium to high visual fidelity, low native editability
-- Confluence-native: medium visual fidelity, high native editability
+- Native mapping report: medium visual fidelity estimate, high native editability potential
 
 ## MVP Scope
 
@@ -297,7 +301,7 @@ Example scoring:
 - Desktop/tablet/mobile preview widths
 - Standalone HTML export
 - Confluence HTML fragment export
-- Confluence-native draft/report export
+- Native Confluence mapping report export
 - Compatibility report
 
 ### Exclude
@@ -316,7 +320,7 @@ Example scoring:
 - npm dependencies may be bundled into the application build.
 - Generated HTML should be self-contained or explicitly bundled with local assets.
 - Imported scripts are disabled or excluded in MVP.
-- The app should avoid presenting Confluence-native export as visually equivalent to standalone HTML.
+- The app should avoid presenting native Confluence mapping as visually equivalent to standalone HTML.
 
 ## Testing Strategy
 
@@ -360,7 +364,7 @@ Example scoring:
 - Keep direct AI integration out of MVP.
 - Treat HTML as one export target, not the entire product.
 - Preserve visual fidelity through a canonical render tree.
-- Add semantic overlay metadata for editing and Confluence-native conversion.
+- Add semantic overlay metadata for editing and native Confluence mapping.
 - Separate visual fidelity from Confluence editability in the UI.
 
 ## References Checked
