@@ -1,14 +1,14 @@
 export type SourceArtifactKind = "html" | "markdown" | "outline" | "template";
 
-export interface SourceArtifact {
+export type SourceArtifact = {
   id: string;
   kind: SourceArtifactKind;
   originalBytesHash: string;
   content: string;
   createdAt: string;
-}
+};
 
-export interface ThemeTokens {
+export type ThemeTokens = {
   colors: {
     background: string;
     text: string;
@@ -18,27 +18,24 @@ export interface ThemeTokens {
   spacingScale: "compact" | "comfortable" | "spacious";
   radius: string;
   shadow: "none" | "soft" | "strong";
-}
+};
 
-export interface SourceMeta {
-  title?: string;
-  description?: string;
-  author?: string;
-  language?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export type SourceMeta = {
+  sourceNodeName: string;
+  sourcePath: string;
+};
 
-export interface RenderNode {
+export type RenderNode = {
   id: string;
-  type: "element" | "text" | "asset" | "fragment";
-  tagName?: string;
-  textContent?: string;
-  attributes?: Record<string, string>;
-  styles?: Record<string, string>;
-  assetId?: string;
+  tag: string;
+  attrs: Record<string, string>;
+  classList: string[];
+  inlineStyle: Record<string, string>;
   children: RenderNode[];
-}
+  text?: string;
+  locked?: boolean;
+  sourceMeta?: SourceMeta;
+};
 
 export type SemanticRole =
   | "document"
@@ -66,14 +63,14 @@ export type ExportTarget =
 
 export type CompatibilitySeverity = "info" | "warning" | "error";
 
-export interface CompatibilityWarning {
+export type CompatibilityWarning = {
   ruleId: string;
   target: ExportTarget;
   severity: CompatibilitySeverity;
   message: string;
   recommendation: string;
   nodeId?: string;
-}
+};
 
 export type NativeMappingExpectedVisualLoss =
   | "none"
@@ -82,45 +79,40 @@ export type NativeMappingExpectedVisualLoss =
   | "significant"
   | "unsupported";
 
-export interface NativeMappingReportEntry {
+export type NativeMappingReportEntry = {
   nodeId: string;
   semanticRole: SemanticRole;
   recommendedTarget: ExportTarget;
   expectedVisualLoss: NativeMappingExpectedVisualLoss;
   compatibilityRuleIds: string[];
   rationale: string;
-}
+};
 
-export interface NativeMappingReport {
+export type NativeMappingReport = {
   target: "native-mapping";
   entries: NativeMappingReportEntry[];
-}
+};
 
-export interface ConfluenceMapping {
-  target: "native-mapping";
-  macroName?: string;
-  nodeType?: string;
-  parameters?: Record<string, string>;
-  unsupportedReason?: string;
-}
+export type ConfluenceMapping = {
+  recommendedTarget: "native" | "macro" | "fragment" | "future-iframe";
+  expectedVisualLoss: "none" | "minor" | "material" | "unknown";
+  rationale: string;
+};
 
-export interface SemanticOverlayEntry {
+export type SemanticOverlayEntry = {
   nodeId: string;
   role: SemanticRole;
-  label?: string;
-  metadata?: Record<string, unknown>;
-  confluenceMapping?: ConfluenceMapping;
-}
+  editableFields: string[];
+  confluenceMapping: ConfluenceMapping;
+  warnings: CompatibilityWarning[];
+};
 
-export interface Asset {
+export type Asset = {
   id: string;
-  sourcePath?: string;
-  fileName?: string;
-  mediaType: string;
-  contentHash: string;
-  dataUri?: string;
-  altText?: string;
-}
+  kind: "image" | "font" | "stylesheet" | "script" | "embed";
+  originalRef: string;
+  status: "local" | "embedded" | "remote-unresolved" | "removed";
+};
 
 export type TransformationStage =
   | "import"
@@ -129,49 +121,51 @@ export type TransformationStage =
   | "edit"
   | "export";
 
-export interface TransformationTraceEntry {
+export type TransformationTraceEntry = {
   id: string;
   stage: TransformationStage;
   message: string;
   nodeId?: string;
   ruleId?: string;
-  severity?: CompatibilitySeverity;
-  timestamp?: string;
-}
+  createdAt: string;
+};
 
-export interface ExportProfile {
-  target: ExportTarget;
-  enabled: boolean;
-  options?: Record<string, unknown>;
-}
-
-export interface ProjectDoc {
+export type ExportProfile = {
   id: string;
-  version: number;
-  sourceArtifact: SourceArtifact;
-  sourceMeta?: SourceMeta;
+  target: ExportTarget;
+  label: string;
+};
+
+export type ProjectDoc = {
+  version: string;
+  title: string;
+  sourceArtifact?: SourceArtifact;
   themeTokens: ThemeTokens;
   renderTree: RenderNode;
   semanticOverlay: SemanticOverlayEntry[];
   assets: Asset[];
   transformationTrace: TransformationTraceEntry[];
   exportProfiles: ExportProfile[];
-}
+};
 
-export interface ExportArtifact {
-  target: ExportTarget;
-  fileName: string;
-  contentType: string;
+export type ExportArtifact = {
+  filename:
+    | "standalone.html"
+    | "confluence-fragment.html"
+    | "compatibility-report.json"
+    | "native-mapping-report.json";
+  mediaType: "text/html" | "application/json";
   content: string;
-}
+};
 
-export interface CompatibilityReport {
-  target: ExportTarget;
+export type CompatibilityReport = {
+  documentVersion: string;
+  generatedAt: string;
   warnings: CompatibilityWarning[];
-}
+};
 
-export interface ExportResult {
+export type ExportResult = {
   artifacts: ExportArtifact[];
   compatibilityReport: CompatibilityReport;
   nativeMappingReport?: NativeMappingReport;
-}
+};
