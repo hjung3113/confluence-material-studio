@@ -72,18 +72,13 @@ export type CompatibilityWarning = {
   nodeId?: string;
 };
 
-export type NativeMappingExpectedVisualLoss =
-  | "none"
-  | "minor"
-  | "moderate"
-  | "significant"
-  | "unsupported";
+export type ExpectedVisualLoss = "none" | "minor" | "material" | "unknown";
 
 export type NativeMappingReportEntry = {
   nodeId: string;
   semanticRole: SemanticRole;
   recommendedTarget: ExportTarget;
-  expectedVisualLoss: NativeMappingExpectedVisualLoss;
+  expectedVisualLoss: ExpectedVisualLoss;
   compatibilityRuleIds: string[];
   rationale: string;
 };
@@ -95,7 +90,7 @@ export type NativeMappingReport = {
 
 export type ConfluenceMapping = {
   recommendedTarget: "native" | "macro" | "fragment" | "future-iframe";
-  expectedVisualLoss: "none" | "minor" | "material" | "unknown";
+  expectedVisualLoss: ExpectedVisualLoss;
   rationale: string;
 };
 

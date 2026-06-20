@@ -134,7 +134,7 @@ describe("document model types", () => {
           nodeId: "node-root",
           semanticRole: "rawHtml",
           recommendedTarget: "confluence-fragment",
-          expectedVisualLoss: "moderate",
+          expectedVisualLoss: "material",
           compatibilityRuleIds: ["CONF-RAW-HTML"],
           rationale: "Raw HTML is preserved as a fragment when no native macro is safe.",
         },
@@ -169,3 +169,20 @@ const invalidTraceEntry: TransformationTraceEntry = {
 };
 
 void invalidTraceEntry;
+
+const invalidNativeMappingReport: NativeMappingReport = {
+  target: "native-mapping",
+  entries: [
+    {
+      nodeId: "node-root",
+      semanticRole: "rawHtml",
+      recommendedTarget: "confluence-fragment",
+      // @ts-expect-error native mapping visual loss uses the shared Confluence vocabulary
+      expectedVisualLoss: "significant",
+      compatibilityRuleIds: ["CONF-RAW-HTML"],
+      rationale: "Old drifted vocabulary must be rejected.",
+    },
+  ],
+};
+
+void invalidNativeMappingReport;
