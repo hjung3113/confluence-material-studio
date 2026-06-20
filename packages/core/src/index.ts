@@ -4,8 +4,10 @@ export {
   getCompatibilityRule,
   listCompatibilityRules,
 } from "./compatibility/rules.js";
+export { sanitizeHtml } from "./sanitize/sanitizeHtml.js";
 export type {
   CompatibilityRule,
   CompatibilityRuleId,
 } from "./compatibility/rules.js";
 export type * from "./document/types.js";
+export type { SanitizedHtml } from "./sanitize/sanitizeHtml.js";
