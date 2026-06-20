@@ -1,3 +1,5 @@
+import type { CompatibilityRuleId } from "../compatibility/rules.js";
+
 export type SourceArtifactKind = "html" | "markdown" | "outline" | "template";
 
 export type SourceArtifact = {
@@ -64,7 +66,7 @@ export type ExportTarget =
 export type CompatibilitySeverity = "info" | "warning" | "error";
 
 export type CompatibilityWarning = {
-  ruleId: string;
+  ruleId: CompatibilityRuleId;
   target: ExportTarget;
   severity: CompatibilitySeverity;
   message: string;
@@ -79,7 +81,7 @@ export type NativeMappingReportEntry = {
   semanticRole: SemanticRole;
   recommendedTarget: ExportTarget;
   expectedVisualLoss: ExpectedVisualLoss;
-  compatibilityRuleIds: string[];
+  compatibilityRuleIds: CompatibilityRuleId[];
   rationale: string;
 };
 
@@ -121,7 +123,7 @@ export type TransformationTraceEntry = {
   stage: TransformationStage;
   message: string;
   nodeId?: string;
-  ruleId?: string;
+  ruleId?: CompatibilityRuleId;
   createdAt: string;
 };
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
   CompatibilityReport,
+  CompatibilityWarning,
   ExportArtifact,
   ExportProfile,
   NativeMappingReport,
@@ -93,7 +94,7 @@ describe("document model types", () => {
           id: "trace-2",
           stage: "export",
           message: "Prepared standalone HTML export",
-          ruleId: "EXPORT_STANDALONE_HTML",
+          ruleId: "HTML_REMOTE_RESOURCE",
           createdAt: "2026-06-20T00:00:02.000Z",
         },
       ],
@@ -111,7 +112,7 @@ describe("document model types", () => {
       generatedAt: "2026-06-20T00:00:03.000Z",
       warnings: [
         {
-          ruleId: "CONF-RAW-HTML",
+          ruleId: "CF_FRAGMENT_OVERFLOW_RISK",
           target: "confluence-fragment",
           severity: "warning",
           message: "Raw HTML may not map to native Confluence content.",
@@ -135,7 +136,7 @@ describe("document model types", () => {
           semanticRole: "rawHtml",
           recommendedTarget: "confluence-fragment",
           expectedVisualLoss: "material",
-          compatibilityRuleIds: ["CONF-RAW-HTML"],
+          compatibilityRuleIds: ["CF_NATIVE_UNMAPPED_LAYOUT"],
           rationale: "Raw HTML is preserved as a fragment when no native macro is safe.",
         },
       ],
@@ -170,6 +171,28 @@ const invalidTraceEntry: TransformationTraceEntry = {
 
 void invalidTraceEntry;
 
+const invalidRuleWarning: CompatibilityWarning = {
+  // @ts-expect-error compatibility warnings must use catalog rule IDs
+  ruleId: "CONF-RAW-HTML",
+  target: "confluence-fragment",
+  severity: "warning",
+  message: "Invalid rule id.",
+  recommendation: "Use a catalog rule id.",
+};
+
+void invalidRuleWarning;
+
+const invalidTraceRuleId: TransformationTraceEntry = {
+  id: "trace-invalid-rule",
+  stage: "export",
+  message: "Invalid trace rule id.",
+  // @ts-expect-error trace rule IDs must use the compatibility catalog
+  ruleId: "EXPORT_STANDALONE_HTML",
+  createdAt: "2026-06-20T00:00:05.000Z",
+};
+
+void invalidTraceRuleId;
+
 const invalidNativeMappingReport: NativeMappingReport = {
   target: "native-mapping",
   entries: [
@@ -179,7 +202,7 @@ const invalidNativeMappingReport: NativeMappingReport = {
       recommendedTarget: "confluence-fragment",
       // @ts-expect-error native mapping visual loss uses the shared Confluence vocabulary
       expectedVisualLoss: "significant",
-      compatibilityRuleIds: ["CONF-RAW-HTML"],
+      compatibilityRuleIds: ["CF_NATIVE_VISUAL_LOSS"],
       rationale: "Old drifted vocabulary must be rejected.",
     },
   ],

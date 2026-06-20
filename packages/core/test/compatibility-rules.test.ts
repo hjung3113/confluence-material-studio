@@ -24,16 +24,52 @@ describe("compatibility rule catalog", () => {
     );
   });
 
-  it("returns copies from the rule list", () => {
+  it("returns copies from the rule list and rule objects", () => {
     const rules = listCompatibilityRules();
+    const originalMessage = rules[0]?.message;
+
+    if (!rules[0] || !originalMessage) {
+      throw new Error("expected compatibility rules to be present");
+    }
+
+    rules[0].message = "mutated copy";
     rules.pop();
 
     expect(listCompatibilityRules()).toHaveLength(EXPECTED_RULE_IDS.length);
+    expect(listCompatibilityRules()[0]?.message).toBe(originalMessage);
   });
 
   it("gets a compatibility rule by id", () => {
     expect(getCompatibilityRule("HTML_SCRIPT_REMOVED")?.severity).toBe(
       "warning",
     );
+  });
+
+  it("defines complete rule metadata", () => {
+    for (const rule of listCompatibilityRules()) {
+      expect(rule.detector.trim()).not.toBe("");
+      expect(rule.message.trim()).not.toBe("");
+      expect(rule.recommendation.trim()).not.toBe("");
+    }
+  });
+
+  it("uses valid targets and severities", () => {
+    const validTargets = new Set([
+      "standalone-html",
+      "confluence-fragment",
+      "native-mapping",
+    ]);
+    const validSeverities = new Set(["info", "warning", "error"]);
+
+    for (const rule of listCompatibilityRules()) {
+      expect(validTargets.has(rule.target)).toBe(true);
+      expect(validSeverities.has(rule.severity)).toBe(true);
+    }
+  });
+
+  it("uses unique rule ids", () => {
+    const ruleIds = listCompatibilityRules().map((rule) => rule.id);
+
+    expect(new Set(ruleIds).size).toBe(ruleIds.length);
   });
 });
