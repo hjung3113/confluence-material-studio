@@ -3,11 +3,9 @@ export type SourceArtifactKind = "html" | "markdown" | "outline" | "template";
 export interface SourceArtifact {
   id: string;
   kind: SourceArtifactKind;
-  name: string;
-  contentHash: string;
-  importedAt: string;
-  originalPath?: string;
-  mimeType?: string;
+  originalBytesHash: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface ThemeTokens {
@@ -70,10 +68,32 @@ export type CompatibilitySeverity = "info" | "warning" | "error";
 
 export interface CompatibilityWarning {
   ruleId: string;
+  target: ExportTarget;
   severity: CompatibilitySeverity;
   message: string;
+  recommendation: string;
   nodeId?: string;
-  target?: ExportTarget;
+}
+
+export type NativeMappingExpectedVisualLoss =
+  | "none"
+  | "minor"
+  | "moderate"
+  | "significant"
+  | "unsupported";
+
+export interface NativeMappingReportEntry {
+  nodeId: string;
+  semanticRole: SemanticRole;
+  recommendedTarget: ExportTarget;
+  expectedVisualLoss: NativeMappingExpectedVisualLoss;
+  compatibilityRuleIds: string[];
+  rationale: string;
+}
+
+export interface NativeMappingReport {
+  target: "native-mapping";
+  entries: NativeMappingReportEntry[];
 }
 
 export interface ConfluenceMapping {
@@ -102,9 +122,16 @@ export interface Asset {
   altText?: string;
 }
 
+export type TransformationStage =
+  | "import"
+  | "sanitize"
+  | "normalize"
+  | "edit"
+  | "export";
+
 export interface TransformationTraceEntry {
   id: string;
-  stage: string;
+  stage: TransformationStage;
   message: string;
   nodeId?: string;
   ruleId?: string;
@@ -146,5 +173,5 @@ export interface CompatibilityReport {
 export interface ExportResult {
   artifacts: ExportArtifact[];
   compatibilityReport: CompatibilityReport;
-  nativeMappingReport?: Record<string, unknown>;
+  nativeMappingReport?: NativeMappingReport;
 }
