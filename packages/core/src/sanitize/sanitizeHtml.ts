@@ -3,7 +3,10 @@ import {
   serialize,
   type DefaultTreeAdapterTypes,
 } from "parse5";
-import { getCompatibilityRule } from "../compatibility/rules.js";
+import {
+  getCompatibilityRule,
+  listCompatibilityRules,
+} from "../compatibility/rules.js";
 import type { CompatibilityRuleId } from "../compatibility/rules.js";
 import type { CompatibilityWarning } from "../document/types.js";
 
@@ -12,7 +15,20 @@ export type SanitizedHtml = {
   warnings: CompatibilityWarning[];
 };
 
-const URL_ATTRIBUTE_NAMES = new Set(["href", "src"]);
+const URL_ATTRIBUTE_NAMES = new Set([
+  "action",
+  "formaction",
+  "href",
+  "poster",
+  "src",
+  "srcset",
+  "xlink:href",
+]);
+const REMOTE_URL_PATTERN = /\bhttps?:\/\//i;
+const CSS_REMOTE_URL_FUNCTION_PATTERN =
+  /url\(\s*(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*'|https?:\/\/[^)]*)\s*\)/gi;
+const CSS_REMOTE_IMPORT_PATTERN =
+  /@import\s+(?:url\(\s*)?(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*'|https?:\/\/[^;)]*)(?:\s*\))?\s*;?/gi;
 
 export function sanitizeHtml(html: string): SanitizedHtml {
   const fragment = parseFragment(html);
@@ -22,7 +38,7 @@ export function sanitizeHtml(html: string): SanitizedHtml {
 
   return {
     html: serialize(fragment),
-    warnings: Array.from(warnings.values()),
+    warnings: sortWarningsByCatalog(warnings),
   };
 }
 
@@ -50,6 +66,7 @@ function sanitizeNode(
   }
 
   sanitizeAttributes(node, warnings);
+  sanitizeStyleElement(node, warnings);
   sanitizeChildren(node, warnings);
 
   if (isTemplate(node)) {
@@ -70,6 +87,11 @@ function sanitizeAttributes(
     }
 
     if (!URL_ATTRIBUTE_NAMES.has(attrName)) {
+      if (attrName === "style") {
+        const sanitizedStyle = sanitizeCss(attr.value, warnings);
+        attr.value = sanitizedStyle;
+      }
+
       return true;
     }
 
@@ -80,12 +102,46 @@ function sanitizeAttributes(
       return false;
     }
 
-    if (url.startsWith("http://") || url.startsWith("https://")) {
+    if (REMOTE_URL_PATTERN.test(url)) {
       addWarning(warnings, "HTML_REMOTE_RESOURCE");
+      return false;
     }
 
     return true;
   });
+}
+
+function sanitizeStyleElement(
+  element: DefaultTreeAdapterTypes.Element,
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): void {
+  if (element.tagName.toLowerCase() !== "style") {
+    return;
+  }
+
+  for (const child of element.childNodes) {
+    if (isTextNode(child)) {
+      child.value = sanitizeCss(child.value, warnings);
+    }
+  }
+}
+
+function sanitizeCss(
+  css: string,
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): string {
+  let sanitizedCss = css;
+
+  sanitizedCss = sanitizedCss.replace(CSS_REMOTE_IMPORT_PATTERN, () => {
+    addWarning(warnings, "HTML_REMOTE_RESOURCE");
+    return "";
+  });
+  sanitizedCss = sanitizedCss.replace(CSS_REMOTE_URL_FUNCTION_PATTERN, () => {
+    addWarning(warnings, "HTML_REMOTE_RESOURCE");
+    return "url(\"\")";
+  });
+
+  return sanitizedCss;
 }
 
 function addWarning(
@@ -111,10 +167,24 @@ function addWarning(
   });
 }
 
+function sortWarningsByCatalog(
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): CompatibilityWarning[] {
+  return listCompatibilityRules()
+    .map(({ id }) => warnings.get(id))
+    .filter((warning): warning is CompatibilityWarning => Boolean(warning));
+}
+
 function isElement(
   node: DefaultTreeAdapterTypes.ChildNode,
 ): node is DefaultTreeAdapterTypes.Element {
   return "tagName" in node;
+}
+
+function isTextNode(
+  node: DefaultTreeAdapterTypes.ChildNode,
+): node is DefaultTreeAdapterTypes.TextNode {
+  return node.nodeName === "#text";
 }
 
 function isTemplate(
