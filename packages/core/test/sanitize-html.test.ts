@@ -82,4 +82,29 @@ describe("sanitizeHtml", () => {
       "HTML_JAVASCRIPT_URL",
     ]);
   });
+
+  it("strips protocol-relative remote resources from attributes and css", () => {
+    const result = sanitizeHtml(`
+      <main>
+        <style>
+          @import url("//cdn.example.com/deck.css");
+          @import "//cdn.example.com/theme.css";
+          .hero { background-image: url(//cdn.example.com/hero.png); }
+        </style>
+        <p style="background: url('//cdn.example.com/bg.png')">Styled</p>
+        <a href="//cdn.example.com/page">remote link</a>
+        <img src="//cdn.example.com/chart.png" srcset="//cdn.example.com/chart-2x.png 2x" alt="Remote chart">
+        <video poster="//cdn.example.com/poster.png"></video>
+        <form action="//cdn.example.com/post">
+          <button formaction="//cdn.example.com/button-post">Submit</button>
+        </form>
+        <svg><use xlink:href="//cdn.example.com/icons.svg#check"></use></svg>
+      </main>
+    `);
+
+    expect(result.warnings.map(({ ruleId }) => ruleId)).toEqual([
+      "HTML_REMOTE_RESOURCE",
+    ]);
+    expect(result.html).not.toContain("//cdn.example.com");
+  });
 });

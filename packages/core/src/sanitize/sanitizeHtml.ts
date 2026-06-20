@@ -24,11 +24,11 @@ const URL_ATTRIBUTE_NAMES = new Set([
   "srcset",
   "xlink:href",
 ]);
-const REMOTE_URL_PATTERN = /\bhttps?:\/\//i;
+const REMOTE_URL_PATTERN = /^(?:https?:)?\/\//i;
 const CSS_REMOTE_URL_FUNCTION_PATTERN =
-  /url\(\s*(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*'|https?:\/\/[^)]*)\s*\)/gi;
+  /url\(\s*(?:"(?:https?:)?\/\/[^"]*"|'(?:https?:)?\/\/[^']*'|(?:https?:)?\/\/[^)]*)\s*\)/gi;
 const CSS_REMOTE_IMPORT_PATTERN =
-  /@import\s+(?:url\(\s*)?(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*'|https?:\/\/[^;)]*)(?:\s*\))?\s*;?/gi;
+  /@import\s+(?:url\(\s*)?(?:"(?:https?:)?\/\/[^"]*"|'(?:https?:)?\/\/[^']*'|(?:https?:)?\/\/[^;)]*)(?:\s*\))?\s*;?/gi;
 
 export function sanitizeHtml(html: string): SanitizedHtml {
   const fragment = parseFragment(html);
