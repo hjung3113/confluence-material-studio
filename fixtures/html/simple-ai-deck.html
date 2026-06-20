@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quarterly Product Review</title>
+    <style>
+      :root {
+        color: #172033;
+        background: #f7f9fc;
+        font-family: Inter, Arial, sans-serif;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      .deck {
+        min-height: 100vh;
+        padding: 48px;
+        background: #f7f9fc;
+      }
+
+      .hero {
+        margin: 0 auto 32px;
+        max-width: 960px;
+        padding: 40px;
+        background: #ffffff;
+        border: 1px solid #d9e1ec;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        max-width: 960px;
+        margin: 0 auto;
+      }
+
+      .metric {
+        padding: 24px;
+        background: #ffffff;
+        border: 1px solid #d9e1ec;
+      }
+
+      .metric strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #0f62fe;
+        font-size: 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <section class="hero">
+        <p>Executive update</p>
+        <h1>Quarterly Product Review</h1>
+        <p>AI-generated draft material for summarizing product health, customer signals, and next-quarter focus.</p>
+      </section>
+      <section class="metric-grid" aria-label="Quarterly metrics">
+        <article class="metric">
+          <strong>18%</strong>
+          <span>Activation lift from onboarding experiments</span>
+        </article>
+        <article class="metric">
+          <strong>42</strong>
+          <span>Customer interviews synthesized into roadmap themes</span>
+        </article>
+        <article class="metric">
+          <strong>3</strong>
+          <span>Launch bets proposed for the next planning cycle</span>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

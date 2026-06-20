@@ -1,0 +1,8 @@
+{
+  "ruleIds": [
+    "HTML_REMOTE_RESOURCE",
+    "HTML_SCRIPT_REMOVED",
+    "HTML_INLINE_HANDLER_REMOVED",
+    "HTML_JAVASCRIPT_URL"
+  ]
+}

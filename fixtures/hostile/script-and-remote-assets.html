@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Hostile Import Fixture</title>
+    <link rel="stylesheet" href="https://cdn.example.com/deck.css">
+    <script>
+      window.evilImportRan = true;
+    </script>
+  </head>
+  <body onload="window.trackImport && window.trackImport()">
+    <main>
+      <h1 onclick="window.alert('clicked')">Hostile Import Fixture</h1>
+      <img src="https://assets.example.com/remote-product-chart.png" alt="Remote product chart">
+      <a href="javascript:window.alert('unsafe')">Run unsafe action</a>
+    </main>
+  </body>
+</html>
