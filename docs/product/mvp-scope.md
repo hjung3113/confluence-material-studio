@@ -41,6 +41,7 @@ MVP proves the import, edit, preview, and export loop with real fixtures. It doe
 - Local or embedded images.
 - `<style>` tags and inline styles.
 - CSS flex and grid, with Confluence fragment warnings where relevant.
+- Safe imported CSS preserved for standalone output where practical, without promising full CSS editability.
 - No script execution.
 - No inline event handler execution.
 - No automatic remote asset fetching.
@@ -62,5 +63,5 @@ MVP proves the import, edit, preview, and export loop with real fixtures. It doe
 - Every fixture emits expected compatibility rule IDs.
 - Exporters do not silently drop content.
 - Visual regression checks exist for the fixture set.
+- Fixture evidence distinguishes standalone visual preservation from Confluence-native editability.
 - `AGENTS.md` and implementation-facing docs are current.
-

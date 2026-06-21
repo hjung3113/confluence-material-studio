@@ -61,6 +61,8 @@ Acceptance gate:
 
 - A project created from HTML can always re-export the untouched original as `source-original.html` or show a diff against it.
 
+Resolution: superseded by the authoritative docs. MVP chose inert display or visual comparison against `sourceArtifact`; executable original HTML re-export is not an official MVP artifact.
+
 ### P0-3. Separate sanitizer policy from parser behavior
 
 The spec says scripts are removed, disabled, or isolated. That is ambiguous and security-sensitive.
@@ -182,4 +184,3 @@ Do not start implementation until these exist:
 - Fixture catalog
 - Visual regression policy
 - Repository structure and AGENTS.md rules
-

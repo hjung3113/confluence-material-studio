@@ -8,6 +8,8 @@
 | Warning | Supported but target-specific output may degrade | Show in import/export panel |
 | Error | Unsafe or unsupported for target | Block target or require change |
 
+Errors are target-scoped. A `native-mapping` error should not automatically block `standalone.html` when the standalone artifact can be generated safely.
+
 ## Risk Categories
 
 - Security risk: scripts, inline handlers, JavaScript URLs.
@@ -22,6 +24,7 @@
 - Do not fetch remote assets automatically.
 - Do not claim native Confluence equivalence.
 - Prefer warnings over silent mutation.
+- Preserve safe visual output for standalone export while reporting editability and Confluence risks separately.
 
 ## User-Facing Requirements
 
@@ -31,4 +34,3 @@ Import and export screens should show:
 - affected target,
 - recommended fix,
 - whether the artifact can still be exported.
-

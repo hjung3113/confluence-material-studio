@@ -12,6 +12,7 @@ The sanitizer classifies unsafe content, records it in reports, and prevents exe
 - `<script>` nodes are excluded from MVP exports.
 - Removed scripts produce `HTML_SCRIPT_REMOVED`.
 - Script text may be retained only in non-executable metadata for audit/debug.
+- Sanitizer removal must not mutate `sourceArtifact`.
 
 ## Inline Event Handler Policy
 
@@ -29,6 +30,7 @@ The sanitizer classifies unsafe content, records it in reports, and prevents exe
 - Remote images, CSS, fonts, scripts, iframes, and embeds produce `HTML_REMOTE_RESOURCE`.
 - Users may later replace remote assets with local files.
 - Generated MVP output must not depend on external CDN/runtime network resources unless an explicit non-default export profile is introduced later.
+- Remote references may remain recorded as unresolved asset metadata; they must not be fetched automatically during import or export.
 
 ## iFrame and Embed Policy
 

@@ -35,4 +35,6 @@ type CompatibilityRule = {
 - Reports must include rule IDs, affected node IDs where available, target, severity, and recommendation.
 - UI text may be localized later, but rule IDs remain stable.
 - New compatibility behavior requires adding or updating this catalog.
-
+- `error` blocks the affected export target or requires explicit user resolution.
+- `warning` permits export but must be visible in import or export review.
+- `info` documents expected loss, unmapped content, or non-blocking caveats.

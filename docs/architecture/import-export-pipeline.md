@@ -13,6 +13,13 @@ HTML import stages:
 7. Run compatibility rules.
 8. Emit import report and transformation trace.
 
+CSS handling:
+
+- Preserve inline styles, class names, and local style text where safe.
+- Do not attempt to convert arbitrary CSS into fully editable semantic fields.
+- Promote only supported style controls into `themeTokens` or section/block settings.
+- Preserve unsupported but safe CSS for standalone output or report target-specific risks.
+
 Markdown/outline import stages:
 
 1. Capture `sourceArtifact`.
@@ -54,6 +61,7 @@ Contract:
 
 - Prioritize visual fidelity.
 - Include CSS locally.
+- Preserve safe imported CSS where practical, even when the editor cannot expose every property as an editable control.
 - Avoid external CDN/runtime network dependency.
 - Do not execute imported scripts in MVP.
 
@@ -72,6 +80,7 @@ Contract:
 - Scope CSS under a generated wrapper class.
 - Emit constrained-width safe HTML.
 - Emit warnings for fixed positioning, viewport units, overflow risks, remote assets, and unsupported dynamic behavior.
+- The fragment is a scoped HTML artifact for HTML-capable Confluence contexts, not a verified universal Confluence page body.
 
 ## Native Mapping Report Export
 
@@ -91,7 +100,7 @@ Contract:
 ## Failure Modes
 
 - Invalid input: importer returns a typed failure with no partial project unless recoverable.
-- Unsupported script/dynamic content: importer preserves safe source reference and emits warnings.
+- Unsafe script/dynamic content: importer records inert metadata where useful, removes executable behavior from MVP outputs, and emits warnings.
+- Unsupported but safe structure or CSS: importer preserves renderable output where practical and emits compatibility warnings when target fidelity is at risk.
 - Missing assets: importer records unresolved references and marks affected exports at risk.
 - Export mismatch risk: compatibility report marks target and rule ID.
-

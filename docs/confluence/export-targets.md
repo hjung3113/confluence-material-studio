@@ -21,6 +21,8 @@ This target does not promise Confluence editability.
 
 Confluence fragment export is generated from `renderTree` but wrapped and scoped for Confluence-like constraints.
 
+This artifact is intended for HTML-capable Confluence contexts. It is not a verified Confluence storage-format page body and does not imply API publishing support.
+
 Rules:
 
 - Scope CSS under `.cf-material-<id>`.
@@ -41,6 +43,8 @@ It is not a Confluence page body. It is a plan that explains:
 - nodes that need future iframe or Forge support,
 - expected visual loss.
 
+The report is valid even when most visual nodes remain fragment-only. Its job is to make native editability limits explicit, not to force conversion.
+
 ## Future Targets
 
 Post-MVP targets may include:
@@ -49,4 +53,3 @@ Post-MVP targets may include:
 - Forge Custom UI macro package.
 - iframe-ready hosted bundle.
 - ADF/storage serialization after a dedicated validation milestone.
-
