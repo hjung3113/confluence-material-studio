@@ -10,6 +10,8 @@ Every fixture defines:
 - expected semantic roles
 - expected export artifacts
 - expected compatibility rule IDs
+- expected locked/raw nodes when semantic recognition is intentionally incomplete
+- expected visual comparison target for standalone output where applicable
 
 ## Initial Fixtures
 
@@ -20,6 +22,8 @@ Every fixture defines:
 | Markdown outline | `fixtures/markdown/product-outline.md` | Validate Markdown section/block creation |
 | Confluence-friendly doc | `fixtures/html/confluence-friendly.html` | Validate native mapping report coverage |
 | Hostile HTML | `fixtures/hostile/script-and-remote-assets.html` | Validate sanitizer and risk reports |
+
+The complex visual HTML fixture must include safe CSS that is preserved for standalone export without requiring every CSS property to become an editable inspector control.
 
 ## Expected Outputs
 
@@ -32,3 +36,16 @@ Expected outputs live under `fixtures/expected/`:
 
 Fixtures should be added before importer/exporter implementation work that depends on them.
 
+## Implemented Fixture Status
+
+The first core vertical slice implements:
+
+- `fixtures/html/simple-ai-deck.html`
+- `fixtures/hostile/script-and-remote-assets.html`
+- `fixtures/expected/hostile-compatibility-rules.json`
+
+The remaining catalog fixtures are outside this core vertical slice and require separate implementation plans:
+
+- `fixtures/html/complex-visual.html`
+- `fixtures/markdown/product-outline.md`
+- `fixtures/html/confluence-friendly.html`
