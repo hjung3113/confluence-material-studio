@@ -4,6 +4,7 @@ export {
   getCompatibilityRule,
   listCompatibilityRules,
 } from "./compatibility/rules.js";
+export { exportStandaloneHtml } from "./export/standaloneHtml.js";
 export { importHtml } from "./import/htmlImport.js";
 export { sanitizeHtml } from "./sanitize/sanitizeHtml.js";
 export type {
