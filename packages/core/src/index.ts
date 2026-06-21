@@ -5,6 +5,7 @@ export {
   listCompatibilityRules,
 } from "./compatibility/rules.js";
 export { exportConfluenceFragment } from "./export/confluenceFragment.js";
+export { exportNativeMappingReport } from "./export/nativeMappingReport.js";
 export { exportStandaloneHtml } from "./export/standaloneHtml.js";
 export { importHtml } from "./import/htmlImport.js";
 export { sanitizeHtml } from "./sanitize/sanitizeHtml.js";

@@ -129,12 +129,15 @@ describe("document model types", () => {
     };
 
     const nativeMappingReport: NativeMappingReport = {
-      target: "native-mapping",
-      entries: [
+      artifactKind: "native-mapping-report",
+      documentVersion: "1",
+      generatedAt: "2026-06-20T00:00:03.000Z",
+      isConfluencePageBody: false,
+      mappings: [
         {
           nodeId: "node-root",
           semanticRole: "rawHtml",
-          recommendedTarget: "confluence-fragment",
+          recommendedTarget: "fragment",
           expectedVisualLoss: "material",
           compatibilityRuleIds: ["CF_NATIVE_UNMAPPED_LAYOUT"],
           rationale: "Raw HTML is preserved as a fragment when no native macro is safe.",
@@ -148,7 +151,7 @@ describe("document model types", () => {
     expect(doc.exportProfiles[0]?.label).toBe("Standalone HTML");
     expect(artifact.filename).toBe("compatibility-report.json");
     expect(compatibilityReport.warnings[0]?.recommendation).toContain("mapping");
-    expect(nativeMappingReport.entries[0]?.semanticRole).toBe("rawHtml");
+    expect(nativeMappingReport.mappings[0]?.semanticRole).toBe("rawHtml");
   });
 });
 
@@ -194,12 +197,15 @@ const invalidTraceRuleId: TransformationTraceEntry = {
 void invalidTraceRuleId;
 
 const invalidNativeMappingReport: NativeMappingReport = {
-  target: "native-mapping",
-  entries: [
+  artifactKind: "native-mapping-report",
+  documentVersion: "1",
+  generatedAt: "2026-06-20T00:00:06.000Z",
+  isConfluencePageBody: false,
+  mappings: [
     {
       nodeId: "node-root",
       semanticRole: "rawHtml",
-      recommendedTarget: "confluence-fragment",
+      recommendedTarget: "fragment",
       // @ts-expect-error native mapping visual loss uses the shared Confluence vocabulary
       expectedVisualLoss: "significant",
       compatibilityRuleIds: ["CF_NATIVE_VISUAL_LOSS"],

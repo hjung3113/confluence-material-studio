@@ -79,15 +79,18 @@ export type ExpectedVisualLoss = "none" | "minor" | "material" | "unknown";
 export type NativeMappingReportEntry = {
   nodeId: string;
   semanticRole: SemanticRole;
-  recommendedTarget: ExportTarget;
+  recommendedTarget: ConfluenceMapping["recommendedTarget"];
   expectedVisualLoss: ExpectedVisualLoss;
   compatibilityRuleIds: CompatibilityRuleId[];
   rationale: string;
 };
 
 export type NativeMappingReport = {
-  target: "native-mapping";
-  entries: NativeMappingReportEntry[];
+  artifactKind: "native-mapping-report";
+  documentVersion: string;
+  generatedAt: string;
+  isConfluencePageBody: false;
+  mappings: NativeMappingReportEntry[];
 };
 
 export type ConfluenceMapping = {
