@@ -15,6 +15,8 @@ const VOID_TAGS = new Set([
   "track",
   "wbr",
 ]);
+const UNWRAPPED_DOCUMENT_TAGS = new Set(["document", "html", "head", "body"]);
+const OMITTED_BODY_TAGS = new Set(["title", "meta"]);
 
 export function exportStandaloneHtml(doc: ProjectDoc): ExportArtifact {
   return {
@@ -40,7 +42,11 @@ function renderNode(node: RenderNode): string {
     return escapeHtml(node.text ?? "");
   }
 
-  if (node.tag === "document") {
+  if (OMITTED_BODY_TAGS.has(node.tag)) {
+    return "";
+  }
+
+  if (UNWRAPPED_DOCUMENT_TAGS.has(node.tag)) {
     return node.children.map((child) => renderNode(child)).join("");
   }
 

@@ -1,0 +1,568 @@
+{
+  "artifactKind": "native-mapping-report",
+  "documentVersion": "0.1.0",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "isConfluencePageBody": false,
+  "mappings": [
+    {
+      "nodeId": "node-1",
+      "semanticRole": "document",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-2",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-3",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-4",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-5",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-6",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-7",
+      "semanticRole": "document",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-8",
+      "semanticRole": "section",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-9",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-10",
+      "semanticRole": "paragraph",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-11",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-12",
+      "semanticRole": "title",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-13",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-14",
+      "semanticRole": "paragraph",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-15",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-16",
+      "semanticRole": "section",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-17",
+      "semanticRole": "cardGrid",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-18",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-19",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-20",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-21",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-22",
+      "semanticRole": "cardGrid",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-23",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-24",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-25",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-26",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-27",
+      "semanticRole": "cardGrid",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-28",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-29",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-30",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-31",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-32",
+      "semanticRole": "section",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-33",
+      "semanticRole": "cardGrid",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-34",
+      "semanticRole": "title",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-35",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-36",
+      "semanticRole": "list",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-37",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-38",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-39",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-40",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-41",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-42",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-43",
+      "semanticRole": "cardGrid",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-44",
+      "semanticRole": "title",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-45",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-46",
+      "semanticRole": "list",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-47",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-48",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-49",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-50",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-51",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-52",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-53",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-54",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-55",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-56",
+      "semanticRole": "paragraph",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-57",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-58",
+      "semanticRole": "section",
+      "recommendedTarget": "native",
+      "expectedVisualLoss": "minor",
+      "compatibilityRuleIds": [],
+      "rationale": "Role has an MVP native mapping candidate."
+    },
+    {
+      "nodeId": "node-59",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-60",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-61",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-62",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-63",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-64",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-65",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-66",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-67",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-68",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-69",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    },
+    {
+      "nodeId": "node-70",
+      "semanticRole": "rawHtml",
+      "recommendedTarget": "fragment",
+      "expectedVisualLoss": "material",
+      "compatibilityRuleIds": [],
+      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+    }
+  ]
+}

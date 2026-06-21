@@ -27,6 +27,10 @@ describe("exportStandaloneHtml", () => {
     expect(artifact.content).toContain("<!doctype html>");
     expect(artifact.content).toContain("Quarterly Product Review");
     expect(artifact.content).toContain("metric-grid");
+    expect(artifact.content.match(/<meta charset="utf-8">/g) ?? []).toHaveLength(
+      1,
+    );
+    expect(artifact.content.match(/<title>/g) ?? []).toHaveLength(1);
     expect(artifact.content).not.toContain("<script");
   });
 

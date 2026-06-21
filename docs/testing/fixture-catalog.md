@@ -18,7 +18,7 @@ Every fixture defines:
 | Fixture | Path | Purpose |
 | --- | --- | --- |
 | Simple AI HTML deck | `fixtures/html/simple-ai-deck.html` | Basic section, heading, cards, and styling import |
-| Complex visual HTML | `fixtures/html/complex-visual.html` | Stress layout preservation and Confluence fragment warnings |
+| Complex visual HTML | `fixtures/html/complex-visual.html` | Stress layout preservation and native mapping report coverage |
 | Markdown outline | `fixtures/markdown/product-outline.md` | Validate Markdown section/block creation |
 | Confluence-friendly doc | `fixtures/html/confluence-friendly.html` | Validate native mapping report coverage |
 | Hostile HTML | `fixtures/hostile/script-and-remote-assets.html` | Validate sanitizer and risk reports |
@@ -44,8 +44,15 @@ The first core vertical slice implements:
 - `fixtures/hostile/script-and-remote-assets.html`
 - `fixtures/expected/hostile-compatibility-rules.json`
 
-The remaining catalog fixtures are outside this core vertical slice and require separate implementation plans:
+The complex visual golden slice implements:
 
 - `fixtures/html/complex-visual.html`
+- `fixtures/expected/complex-visual.standalone.html`
+- `fixtures/expected/complex-visual.confluence-fragment.html`
+- `fixtures/expected/complex-visual.compatibility-report.json`
+- `fixtures/expected/complex-visual.native-mapping-report.json`
+
+The remaining catalog fixtures are outside the implemented core slices and require separate implementation plans:
+
 - `fixtures/markdown/product-outline.md`
 - `fixtures/html/confluence-friendly.html`
