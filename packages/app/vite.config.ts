@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  base: "./",
   resolve: {
     alias: {
       "@htmleditor/core": resolve(__dirname, "../core/src/index.ts"),
