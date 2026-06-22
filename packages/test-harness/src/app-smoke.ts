@@ -10,26 +10,33 @@ const requiredShellText = [
 ];
 
 const requiredBundleText = [
-  "HTML draft",
-  "Import HTML draft",
+  "Canvas-first visual editor",
+  "Visual canvas",
+  "Document outline",
+  "Allowed blocks",
+  "Callout / Note",
+  "Import sanitized HTML",
   "Selected text",
   "Apply text",
-  "Section navigator",
-  "Live canvas",
   "Inspector",
+  "Export evidence",
+  "Native mapping is a report/plan, not a Confluence page body.",
   "standalone.html",
   "confluence-fragment.html",
   "compatibility-report.json",
   "native-mapping-report.json",
-  "CF_FRAGMENT_FIXED_POSITION",
-  "CF_FRAGMENT_VIEWPORT_UNIT",
-  "CF_FRAGMENT_GLOBAL_SELECTOR",
-  "CF_FRAGMENT_OVERFLOW_RISK",
-  "HTML_SCRIPT_REMOVED",
-  "status",
-  "callout",
-  "expand",
-  "code",
+  "data-core-node-id",
+  "data-editor-host",
+  "cms:add-callout",
+  "Review note",
+];
+
+const forbiddenBundleText = [
+  "Ecommerce",
+  "Script widget",
+  "Remote asset widget",
+  "GrapesJS default blocks",
+  "Publish to Confluence",
 ];
 
 async function main(): Promise<void> {
@@ -50,7 +57,13 @@ async function main(): Promise<void> {
     assertContains(bundle, text, scriptPath);
   }
 
-  console.log("APP_SMOKE_PASS built app artifacts and MVP shell markers verified");
+  for (const text of forbiddenBundleText) {
+    assertNotContains(bundle, text, scriptPath);
+  }
+
+  console.log(
+    "APP_SMOKE_PASS built app artifacts and canvas-first editor markers verified",
+  );
 }
 
 function assertBuiltApp(): void {
@@ -76,6 +89,12 @@ function scriptPathFromIndex(indexHtml: string): string {
 function assertContains(content: string, text: string, source: string): void {
   if (!content.includes(text)) {
     throw new Error(`${source} does not contain required marker: ${text}`);
+  }
+}
+
+function assertNotContains(content: string, text: string, source: string): void {
+  if (content.includes(text)) {
+    throw new Error(`${source} contains forbidden marker: ${text}`);
   }
 }
 

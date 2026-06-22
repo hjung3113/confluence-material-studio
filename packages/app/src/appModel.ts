@@ -1,7 +1,10 @@
 import {
   exportProject,
+  editNodeText,
   importHtml,
   importMarkdown,
+  insertCalloutAfterNode,
+  renderTreeToHtml,
   type ExportResult,
   type ProjectDoc,
   type RenderNode,
@@ -15,6 +18,13 @@ export type ImportFixtureInput = {
 };
 
 export type PreviewWidth = "desktop" | "tablet" | "mobile";
+
+export const sampleMaterial: ImportFixtureInput = {
+  kind: "html",
+  title: "Release Readiness",
+  content:
+    '<main class="material-sample"><section><h1>Release Readiness</h1><p>All export targets need explicit compatibility evidence before the material is shared.</p><aside class="callout" data-confluence-macro="note"><h2>Migration note</h2><p>Native mapping is a report, not a page body.</p></aside></section></main>',
+};
 
 export type AppState = {
   doc: ProjectDoc | undefined;
@@ -61,6 +71,10 @@ export function importFixture(
   };
 }
 
+export function importSampleMaterial(state: AppState): AppState {
+  return importFixture(state, sampleMaterial);
+}
+
 export function selectNodeByRole(
   state: AppState,
   role: SemanticRole,
@@ -78,15 +92,60 @@ export function editSelectedText(state: AppState, text: string): AppState {
     return state;
   }
 
+  if (!canEditSelectedText(state)) {
+    return state;
+  }
+
   return {
     ...state,
-    doc: {
-      ...state.doc,
-      renderTree: updateNode(state.doc.renderTree, state.selectedNodeId, (node) =>
-        replaceText(node, text),
-      ),
-    },
+    doc: editNodeText(state.doc, {
+      nodeId: state.selectedNodeId,
+      text,
+      createdAt: state.now,
+    }),
   };
+}
+
+export function canEditSelectedText(state: AppState): boolean {
+  return Boolean(
+    state.doc &&
+      state.selectedNodeId &&
+      findDirectTextChild(state.doc.renderTree, state.selectedNodeId),
+  );
+}
+
+export function insertCalloutAfterSelection(
+  state: AppState,
+  input: { title: string; body: string },
+): AppState {
+  if (!state.doc || !state.selectedNodeId) {
+    return state;
+  }
+
+  const doc = insertCalloutAfterNode(state.doc, {
+    anchorNodeId: state.selectedNodeId,
+    title: input.title,
+    body: input.body,
+    createdAt: state.now,
+  });
+  const calloutEntry = [...doc.semanticOverlay]
+    .reverse()
+    .find((entry) => entry.role === "callout");
+
+  return {
+    ...state,
+    doc,
+    selectedNodeId: calloutEntry?.nodeId ?? state.selectedNodeId,
+  };
+}
+
+export function getCanvasHtml(state: AppState): string {
+  return state.doc
+    ? renderTreeToHtml(state.doc.renderTree, {
+        includeNodeIds: true,
+        omitStyleTags: true,
+      })
+    : "";
 }
 
 export function getSelectedText(state: AppState): string {
@@ -100,7 +159,10 @@ export function getSelectedText(state: AppState): string {
     return "";
   }
 
-  return textContent(selectedNode);
+  return selectedNode.children
+    .filter((child) => child.tag === "#text")
+    .map((child) => child.text ?? "")
+    .join("");
 }
 
 export function getExportArtifact(
@@ -113,103 +175,11 @@ export function getExportArtifact(
   );
 }
 
-export function updateThemeColor(
-  state: AppState,
-  color: keyof ProjectDoc["themeTokens"]["colors"],
-  value: string,
-): AppState {
-  if (!state.doc) {
-    return state;
-  }
-
-  return {
-    ...state,
-    doc: {
-      ...state.doc,
-      themeTokens: {
-        ...state.doc.themeTokens,
-        colors: {
-          ...state.doc.themeTokens.colors,
-          [color]: value,
-        },
-      },
-    },
-  };
-}
-
 export function setPreviewWidth(
   state: AppState,
   previewWidth: PreviewWidth,
 ): AppState {
   return { ...state, previewWidth };
-}
-
-export function reorderSelectedSection(
-  state: AppState,
-  direction: "up" | "down",
-): AppState {
-  if (!state.doc || !state.selectedNodeId) {
-    return state;
-  }
-
-  return {
-    ...state,
-    doc: {
-      ...state.doc,
-      renderTree: reorderSection(
-        state.doc.renderTree,
-        state.selectedNodeId,
-        direction,
-      ),
-    },
-  };
-}
-
-export function duplicateSelectedSection(state: AppState): AppState {
-  if (!state.doc || !state.selectedNodeId) {
-    return state;
-  }
-
-  const selectedSectionId = findContainingSectionId(
-    state.doc.renderTree,
-    state.selectedNodeId,
-  );
-
-  if (!selectedSectionId) {
-    return state;
-  }
-
-  return {
-    ...state,
-    doc: {
-      ...state.doc,
-      renderTree: duplicateSection(state.doc.renderTree, selectedSectionId),
-      semanticOverlay: state.doc.semanticOverlay,
-    },
-  };
-}
-
-export function deleteSelectedSection(state: AppState): AppState {
-  if (!state.doc || !state.selectedNodeId) {
-    return state;
-  }
-
-  const selectedSectionId = findContainingSectionId(
-    state.doc.renderTree,
-    state.selectedNodeId,
-  );
-
-  if (!selectedSectionId) {
-    return state;
-  }
-
-  return {
-    ...state,
-    doc: {
-      ...state.doc,
-      renderTree: deleteSection(state.doc.renderTree, selectedSectionId),
-    },
-  };
 }
 
 export function exportCurrentProject(state: AppState): ExportResult {
@@ -251,175 +221,6 @@ function firstEditableNode(doc: ProjectDoc): RenderNode | undefined {
     : undefined;
 }
 
-function replaceText(node: RenderNode, text: string): RenderNode {
-  const textChild = node.children.find((child) => child.tag === "#text");
-
-  if (node.tag === "#text") {
-    return { ...node, text };
-  }
-
-  if (textChild) {
-    return {
-      ...node,
-      children: node.children.map((child) =>
-        child.id === textChild.id ? { ...child, text } : child,
-      ),
-    };
-  }
-
-  return {
-    ...node,
-    children: [
-      {
-        id: `${node.id}-text`,
-        tag: "#text",
-        attrs: {},
-        classList: [],
-        inlineStyle: {},
-        children: [],
-        text,
-      },
-    ],
-  };
-}
-
-function textContent(node: RenderNode): string {
-  if (node.tag === "#text") {
-    return node.text ?? "";
-  }
-
-  return node.children.map((child) => textContent(child)).join("");
-}
-
-function updateNode(
-  node: RenderNode,
-  nodeId: string,
-  update: (node: RenderNode) => RenderNode,
-): RenderNode {
-  if (node.id === nodeId) {
-    return update(node);
-  }
-
-  return {
-    ...node,
-    children: node.children.map((child) => updateNode(child, nodeId, update)),
-  };
-}
-
-function reorderSection(
-  node: RenderNode,
-  selectedNodeId: string,
-  direction: "up" | "down",
-): RenderNode {
-  const selectedSectionId = findContainingSectionId(node, selectedNodeId);
-
-  if (!selectedSectionId) {
-    return node;
-  }
-
-  return updateSectionList(node, (sections) => {
-    const index = sections.findIndex((section) => section.id === selectedSectionId);
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-
-    if (index === -1 || targetIndex < 0 || targetIndex >= sections.length) {
-      return sections;
-    }
-
-    const nextSections = [...sections];
-    const [section] = nextSections.splice(index, 1);
-
-    if (!section) {
-      return sections;
-    }
-
-    nextSections.splice(targetIndex, 0, section);
-    return nextSections;
-  });
-}
-
-function duplicateSection(node: RenderNode, sectionId: string): RenderNode {
-  return updateSectionList(node, (sections) => {
-    const index = sections.findIndex((section) => section.id === sectionId);
-
-    if (index === -1) {
-      return sections;
-    }
-
-    const duplicate = cloneNodeWithSuffix(sections[index]!, "-copy");
-    const nextSections = [...sections];
-    nextSections.splice(index + 1, 0, duplicate);
-    return nextSections;
-  });
-}
-
-function deleteSection(node: RenderNode, sectionId: string): RenderNode {
-  return updateSectionList(node, (sections) => {
-    if (sections.length <= 1) {
-      return sections;
-    }
-
-    return sections.filter((section) => section.id !== sectionId);
-  });
-}
-
-function updateSectionList(
-  node: RenderNode,
-  update: (sections: RenderNode[]) => RenderNode[],
-): RenderNode {
-  if (node.children.some((child) => child.tag === "section")) {
-    const sections = node.children.filter((child) => child.tag === "section");
-    const sectionIds = new Set(sections.map((section) => section.id));
-    const nextSections = update(sections);
-
-    return {
-      ...node,
-      children: node.children.flatMap((child) => {
-        if (sectionIds.has(child.id)) {
-          return child.id === sections[0]?.id ? nextSections : [];
-        }
-
-        return [child];
-      }),
-    };
-  }
-
-  return {
-    ...node,
-    children: node.children.map((child) => updateSectionList(child, update)),
-  };
-}
-
-function cloneNodeWithSuffix(node: RenderNode, suffix: string): RenderNode {
-  return {
-    ...node,
-    id: `${node.id}${suffix}`,
-    children: node.children.map((child) => cloneNodeWithSuffix(child, suffix)),
-  };
-}
-
-function findContainingSectionId(
-  root: RenderNode,
-  nodeId: string,
-): string | undefined {
-  let found: string | undefined;
-
-  function walk(node: RenderNode, currentSectionId: string | undefined): void {
-    const nextSectionId = node.tag === "section" ? node.id : currentSectionId;
-
-    if (node.id === nodeId) {
-      found = nextSectionId;
-      return;
-    }
-
-    for (const child of node.children) {
-      walk(child, nextSectionId);
-    }
-  }
-
-  walk(root, undefined);
-  return found;
-}
-
 function findNode(node: RenderNode, nodeId: string): RenderNode | undefined {
   if (node.id === nodeId) {
     return node;
@@ -434,6 +235,13 @@ function findNode(node: RenderNode, nodeId: string): RenderNode | undefined {
   }
 
   return undefined;
+}
+
+function findDirectTextChild(
+  node: RenderNode,
+  nodeId: string,
+): RenderNode | undefined {
+  return findNode(node, nodeId)?.children.find((child) => child.tag === "#text");
 }
 
 function visitNode(node: RenderNode, visit: (node: RenderNode) => void): void {

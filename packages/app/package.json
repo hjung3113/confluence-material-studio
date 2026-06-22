@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@htmleditor/core": "0.0.0"
+    "@htmleditor/core": "0.0.0",
+    "grapesjs": "^0.23.2"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

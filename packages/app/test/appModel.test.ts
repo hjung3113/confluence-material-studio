@@ -4,17 +4,17 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   createAppState,
-  deleteSelectedSection,
-  duplicateSelectedSection,
+  canEditSelectedText,
   editSelectedText,
+  getCanvasHtml,
   getExportArtifact,
   getSelectedText,
   exportCurrentProject,
   importFixture,
-  reorderSelectedSection,
+  importSampleMaterial,
+  insertCalloutAfterSelection,
   selectNodeByRole,
   setPreviewWidth,
-  updateThemeColor,
 } from "../src/appModel.js";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +24,45 @@ const readFixture = (fixturePath: string) =>
   readFileSync(resolve(repoRoot, fixturePath), "utf8");
 
 describe("app model", () => {
+  it("starts from an editable sample material for the canvas-first screen", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importSampleMaterial(state);
+
+    expect(state.doc?.title).toBe("Release Readiness");
+    expect(getSelectedText(state)).toBe("Release Readiness");
+    expect(getCanvasHtml(state)).toContain('data-core-node-id="node-');
+    expect(getCanvasHtml(state)).toContain("Release Readiness");
+  });
+
+  it("inserts a constrained callout block through the app model", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importSampleMaterial(state);
+    state = insertCalloutAfterSelection(state, {
+      title: "Review note",
+      body: "Confirm the Confluence fragment before sharing.",
+    });
+
+    const exported = exportCurrentProject(state);
+
+    expect(getCanvasHtml(state)).toContain("Review note");
+    expect(getExportArtifact(exported, "standalone.html")).toContain(
+      "Confirm the Confluence fragment before sharing.",
+    );
+    expect(
+      exported.nativeMappingReport?.mappings.some(
+        (mapping) => mapping.semanticRole === "callout",
+      ),
+    ).toBe(true);
+  });
+
   it("imports, edits, previews, and exports an HTML fixture", () => {
     let state = createAppState({
       now: "2026-06-22T00:00:00.000Z",
@@ -37,16 +76,11 @@ describe("app model", () => {
     });
     state = selectNodeByRole(state, "title");
     state = editSelectedText(state, "Release Readiness Edited");
-    state = updateThemeColor(state, "accent", "#0f766e");
     state = setPreviewWidth(state, "tablet");
-    state = reorderSelectedSection(state, "down");
-    state = duplicateSelectedSection(state);
-    state = deleteSelectedSection(state);
 
     const result = exportCurrentProject(state);
 
     expect(state.previewWidth).toBe("tablet");
-    expect(state.doc?.themeTokens.colors.accent).toBe("#0f766e");
     expect(JSON.stringify(state.doc?.renderTree)).toContain(
       "Release Readiness Edited",
     );
@@ -70,6 +104,23 @@ describe("app model", () => {
     ).toEqual(
       expect.arrayContaining(["status", "callout", "panel", "expand", "code"]),
     );
+  });
+
+  it("does not expose selected text for non-direct text containers", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importSampleMaterial(state);
+    state = insertCalloutAfterSelection(state, {
+      title: "Review note",
+      body: "Confirm the Confluence fragment before sharing.",
+    });
+
+    expect(canEditSelectedText(state)).toBe(false);
+    expect(getSelectedText(state)).toBe("");
+    expect(editSelectedText(state, "No silent edit")).toBe(state);
   });
 
   it("imports markdown and hostile fixtures through the same app model", () => {

@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "browser:smoke": "tsc && node dist/src/browser-smoke.js",
     "smoke": "tsc && node dist/src/app-smoke.js",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "playwright-core": "^1.61.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }

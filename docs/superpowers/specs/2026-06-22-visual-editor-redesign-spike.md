@@ -87,18 +87,43 @@ They may be useful later for rich text inside selected text blocks. They should 
 
 Build a GrapesJS-backed editor spike inside `packages/app` while preserving `packages/core` ownership of import, sanitization, compatibility, and export.
 
+GrapesJS is an app-layer canvas adapter only. It is not the product document model, not the sanitizer, and not an export source of truth. `ProjectDoc` remains the authoritative edited state. GrapesJS may render safe editor HTML with stable node IDs, report the selected component, and host constrained editor interactions, but export still calls `packages/core` with the current `ProjectDoc`.
+
 The spike is successful only if the user can complete this loop:
 
 1. Open the app.
-2. Import or paste an HTML draft.
-3. See the draft rendered in a central canvas.
-4. Click a heading or paragraph in the canvas.
-5. See a visible selection outline and matching inspector state.
-6. Edit the selected text.
-7. Add a constrained Confluence-material block.
+2. See an editable example material already loaded in the central canvas.
+3. Click a heading or paragraph in the canvas.
+4. See a visible selection outline and matching inspector state.
+5. Edit the selected text.
+6. Add one constrained Confluence-material block.
+7. Import or paste a safe HTML draft from the top bar.
 8. Preview desktop/tablet/mobile widths.
 9. Export through `packages/core`.
 10. See compatibility warnings and the four MVP artifacts.
+
+The primary screen must not be a source textarea or export dashboard. Source import and export evidence are commands or drawers around the canvas workflow.
+
+## Spike Cuts
+
+The spike must deliberately cut generic website-builder scope:
+
+- No GrapesJS default blocks, default panels, default layer manager, default style manager, forms, embeds, iframes, scripts, navigation menus, ecommerce blocks, or remote asset widgets.
+- No broad arbitrary CSS editor.
+- No drag/drop layout authoring beyond adding the single supported callout block.
+- No duplicate/delete/reorder toolbar actions unless they fall out naturally from the existing core model without extra UI complexity.
+- No Markdown/outline import in the visual-editor spike UI, even though it remains an MVP core capability.
+
+The spike keeps only:
+
+- Editable sample first screen.
+- Safe HTML paste and `.html` file import.
+- Canvas click selection.
+- Parent/child selection affordance through a breadcrumb or outline.
+- Text editing for text-bearing nodes.
+- One constrained callout/note block insert.
+- Desktop/tablet/mobile preview widths.
+- Core-backed export drawer with target-specific evidence.
 
 ## UX Shape
 
@@ -114,22 +139,21 @@ Top bar:
 Left rail:
 
 - Document outline
-- Sections/layers
-- Confluence-material block palette
+- Parent/child selection breadcrumb or compact outline
+- Confluence-material block palette with only the spike-allowed blocks
 
 Center:
 
 - Visual canvas
 - Click-to-select elements
 - Selection outline
-- Floating mini-toolbar for text, duplicate, delete, move, and add-nearby actions
+- Floating mini-toolbar for text edit and add-nearby callout only
 
 Right inspector:
 
 - Selected element name and role
 - Text content
-- Basic style controls
-- Section/block controls
+- Locked/unsupported state for preserved-but-not-editable imported structures
 - Confluence compatibility hints for the selected element where available
 
 Bottom or export drawer:
@@ -146,19 +170,15 @@ The first screen should not be a source form.
 
 It should show an editable example material on the canvas, with import available in the top bar. This lets a user immediately understand that the app is an editor.
 
+On first load, without importing anything, the user must be able to click the sample heading, see the selection outline, edit text, add a callout block, and export. The source textarea must not be visible on the primary screen.
+
 ## Constrained Block Palette
 
 Initial blocks:
 
 - Title / heading
 - Paragraph
-- Hero section
-- Two-column section
 - Callout / note
-- Status pill
-- Expand / details
-- Code block
-- Metric cards
 - Divider
 
 Excluded from the first spike:
@@ -169,6 +189,12 @@ Excluded from the first spike:
 - Script widgets
 - Embed/iframe widgets
 - Remote asset widgets
+- Hero sections
+- Two-column sections
+- Status pills
+- Expand/details
+- Code blocks
+- Metric cards
 
 ## Architecture
 
@@ -181,6 +207,7 @@ Excluded from the first spike:
 - Confluence fragment export
 - native mapping report
 - stable rule IDs
+- canonical `ProjectDoc` mutations that affect export
 
 `packages/app` owns:
 
@@ -188,9 +215,11 @@ Excluded from the first spike:
 - panels and commands
 - selection and inspector UI
 - import/export drawers
-- conversion between editor state and core import/export calls
+- conversion between safe core document state and disposable canvas state
 
-The app may hold GrapesJS editing state, but exported output must still pass through `packages/core`.
+The app may hold GrapesJS editing state, but exported output must still pass through `packages/core`. UI files outside the GrapesJS adapter must not import `grapesjs` directly.
+
+Core needs explicit document operations for text edit and block insert so `renderTree`, `semanticOverlay`, and transformation evidence do not drift. The current app-level direct render-tree mutation is acceptable only as a prior prototype, not as the visual-editor architecture.
 
 ## Data Flow
 
@@ -198,40 +227,67 @@ Import flow:
 
 1. User imports HTML.
 2. App passes HTML into `packages/core` import/sanitize path.
-3. App renders the sanitized/editable HTML into GrapesJS.
+3. App renders safe editor HTML derived from the resulting `ProjectDoc` into GrapesJS.
 4. App keeps original `sourceArtifact` through the core document model.
+
+Raw imported HTML must never be passed directly into GrapesJS. The app must not call a canvas load API with unsanitized pasted/file HTML.
 
 Edit flow:
 
 1. User selects an element on the canvas.
 2. GrapesJS selection updates app inspector state.
-3. Inspector or inline edit changes the selected component.
-4. App can regenerate a core `ProjectDoc` from the current editor HTML when export or compatibility refresh is requested.
+3. Inspector or inline edit dispatches a core document operation.
+4. Core updates `ProjectDoc`; the app refreshes the canvas from that state.
 
 Export flow:
 
-1. App asks GrapesJS for current HTML/CSS.
-2. App passes the current HTML to `packages/core`.
+1. App reads the current `ProjectDoc`.
+2. App calls `packages/core` export APIs.
 3. Core emits the four MVP artifacts.
 4. App displays artifacts and compatibility warnings.
+
+GrapesJS `getHtml()` or `getCss()` output is not an MVP export contract. If later style editing requires additional CSS persistence, the CSS field must be documented in core before it becomes export input.
+
+## UI States
+
+The spike must cover these explicit states:
+
+- Editor initializing.
+- Editable example ready.
+- Imported HTML ready.
+- Selected text node.
+- Selected non-text block.
+- Preserved but not editable imported structure.
+- Dirty document after edit or block insert.
+- Export drawer closed.
+- Export drawer open with successful artifacts.
+- Export failed with a visible error.
+- Compatibility warnings present.
 
 ## Acceptance Criteria
 
 The spike must prove:
 
+- First load starts with editable sample material on the canvas.
+- No source textarea is visible on the primary screen.
 - Canvas click selection works for headings, paragraphs, and sections.
 - The selected element has a visible outline.
+- A nested fixture can select child text and then parent section with distinct inspector labels.
 - The inspector displays selected text for text-bearing elements.
 - Editing selected text updates the canvas.
-- Adding at least one constrained block works.
-- Importing a pasted HTML draft renders into the canvas.
+- Adding one constrained callout/note block works.
+- The exposed block palette contains only Title, Paragraph, Callout/Note, and Divider.
+- Importing pasted HTML and a `.html` file renders sanitized content into the canvas.
 - Export still emits:
   - `standalone.html`
   - `confluence-fragment.html`
   - `compatibility-report.json`
   - `native-mapping-report.json`
+- Export UI labels `native-mapping-report.json` as a report/plan, not as native page export.
 - Compatibility warnings still use stable rule IDs.
 - The app does not execute imported scripts or inline event handlers.
+- Raw imported HTML never enters GrapesJS before core sanitization.
+- Standalone visual evidence exists for the edited sample or representative fixture.
 
 ## Testing Strategy
 
@@ -244,13 +300,15 @@ Unit tests:
 Browser smoke test:
 
 - Load app.
-- Import a small HTML draft.
+- Confirm editable sample is visible without import.
 - Click heading on canvas.
 - Edit heading text.
 - Add a callout block.
+- Import a small HTML draft.
 - Export.
 - Assert exported standalone HTML contains the edited text and callout.
 - Assert compatibility report is visible and parseable.
+- Assert no forbidden generic builder blocks are visible.
 
 Visual smoke:
 
@@ -259,6 +317,8 @@ Visual smoke:
   - visible canvas
   - visible selected element outline
   - usable inspector
+
+Implementation planning must add a real browser automation gate for this spike. The existing static built-bundle smoke is not enough for click selection, editing, block insertion, export, or screenshot evidence.
 
 ## Implementation Plan Boundary
 
@@ -292,6 +352,8 @@ Suggested files:
 Proceed with a GrapesJS spike unless install or integration reveals a blocking issue.
 
 If GrapesJS proves too invasive, fall back to a custom canvas-selection adapter only for static HTML nodes, but this should be the fallback, not the starting assumption.
+
+As of this review, the local environment cannot fetch `grapesjs` from npm because `registry.npmjs.org` DNS resolution fails. The implementation plan therefore needs a dependency-install gate before claiming the GrapesJS-backed version complete.
 
 ## References
 
