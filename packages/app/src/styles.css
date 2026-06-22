@@ -1,0 +1,110 @@
+.studio-shell {
+  display: grid;
+  grid-template-columns: 260px minmax(420px, 1fr) 320px;
+  min-height: 100vh;
+  color: #182033;
+  background: #f5f7fb;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.source-panel,
+.inspector-panel {
+  padding: 18px;
+  border-right: 1px solid #d8deea;
+  background: #ffffff;
+}
+
+.inspector-panel {
+  border-right: 0;
+  border-left: 1px solid #d8deea;
+}
+
+h1 {
+  margin: 0 0 18px;
+  font-size: 22px;
+}
+
+h2 {
+  margin: 18px 0 10px;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+select,
+input,
+button {
+  font: inherit;
+}
+
+button,
+select,
+input {
+  border: 1px solid #b8c2d4;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+button {
+  min-height: 34px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+button.active {
+  border-color: #0f766e;
+  color: #0f766e;
+}
+
+.section-list,
+.button-row {
+  display: grid;
+  gap: 8px;
+}
+
+.canvas-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  padding: 18px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.canvas {
+  min-height: 480px;
+  margin: 0 auto;
+  overflow: auto;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.canvas-desktop {
+  width: min(100%, 1100px);
+}
+
+.canvas-tablet {
+  width: min(100%, 760px);
+}
+
+.canvas-mobile {
+  width: min(100%, 390px);
+}
+
+.canvas main,
+.canvas section {
+  box-sizing: border-box;
+}
+
+ul {
+  padding-left: 18px;
+}

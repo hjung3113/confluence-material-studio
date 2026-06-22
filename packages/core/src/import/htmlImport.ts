@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
 import {
   parseFragment,
   type DefaultTreeAdapterTypes,
 } from "parse5";
+import { hashContent } from "../document/hash.js";
 import type {
   CompatibilityWarning,
   ConfluenceMapping,
@@ -80,10 +80,6 @@ export function importHtml(input: ImportHtmlInput): ProjectDoc {
       },
     ],
   };
-}
-
-function hashContent(content: string): string {
-  return createHash("sha256").update(content).digest("hex");
 }
 
 function renderNodeFromParent(

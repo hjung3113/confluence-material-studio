@@ -29,6 +29,8 @@
 - visual diff helpers
 - export artifact checks
 
+The current MVP harness starts with built-asset smoke verification because the local sandbox can block HTTP listen. Browser automation and screenshot diffing remain the next strengthening step once the app shell is stable in an environment that permits browser execution.
+
 ## Dependency Rules
 
 - `core` must not depend on React.
@@ -51,4 +53,3 @@ Undo/redo belongs to the app layer but records core-level document operations. R
 ## Asset Ownership
 
 Core owns asset normalization and export asset references. App owns user interaction for selecting, replacing, and previewing assets.
-

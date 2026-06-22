@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type {
   ConfluenceMapping,
   ProjectDoc,
@@ -7,6 +6,7 @@ import type {
   SemanticRole,
   ThemeTokens,
 } from "../document/types.js";
+import { hashContent } from "../document/hash.js";
 
 export type ImportMarkdownInput = {
   markdown: string;
@@ -421,8 +421,4 @@ function confluenceMappingForRole(role: SemanticRole): ConfluenceMapping {
     expectedVisualLoss: role === "document" ? "none" : "minor",
     rationale: "Markdown outline node maps to an MVP native Confluence candidate.",
   };
-}
-
-function hashContent(content: string): string {
-  return createHash("sha256").update(content).digest("hex");
 }

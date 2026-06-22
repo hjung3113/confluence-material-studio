@@ -16,6 +16,17 @@ The implemented core slice lives in `packages/core` and supports:
 - compatibility reports with stable rule IDs
 - native mapping reports for Confluence-native and macro candidates
 
+The implemented app slice lives in `packages/app` and supports:
+
+- source fixture selection for HTML, Markdown, and hostile HTML
+- section navigator
+- live render-tree canvas
+- inspector text edit
+- theme accent edit
+- section reorder, duplicate, and delete controls
+- desktop, tablet, and mobile preview width controls
+- export artifact, compatibility warning, and macro candidate summaries
+
 MVP export artifacts are:
 
 - `standalone.html`
@@ -51,7 +62,15 @@ Run the MVP smoke flow:
 npm run smoke
 ```
 
-The smoke flow imports the core HTML, Markdown, hostile, and Confluence-friendly fixtures, exports all four MVP artifacts, checks hostile output remains inert, and checks Confluence macro/risk reporting.
+Run the app build and smoke flow:
+
+```bash
+npm run app:smoke
+```
+
+The core smoke flow imports the HTML, Markdown, hostile, and Confluence-friendly fixtures, exports all four MVP artifacts, checks hostile output remains inert, and checks Confluence macro/risk reporting.
+
+The app smoke flow builds the browser app and verifies the built shell contains the MVP editor surface and Confluence compatibility markers. In the current sandbox, local HTTP listen is blocked, so the smoke harness validates built artifacts from disk instead of opening a server.
 
 ## Key Files
 

@@ -4,13 +4,18 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/core"
+    "packages/core",
+    "packages/app",
+    "packages/test-harness"
   ],
   "scripts": {
     "test": "npm test --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "smoke": "npm test --workspace @htmleditor/core -- mvp-smoke.test.ts",
-    "verify": "npm run typecheck --workspaces && npm test --workspaces"
+    "app:dev": "npm run dev --workspace @htmleditor/app",
+    "app:build": "npm run build --workspace @htmleditor/app",
+    "app:smoke": "npm run app:build && npm run smoke --workspace @htmleditor/test-harness",
+    "verify": "npm run typecheck --workspaces && npm test --workspaces && npm run app:smoke"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
