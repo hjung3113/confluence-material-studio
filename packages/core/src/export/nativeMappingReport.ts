@@ -3,6 +3,7 @@ import type {
   NativeMappingReport,
   ProjectDoc,
 } from "../document/types.js";
+import { buildConfluenceAdfDraft } from "./confluenceAdfDraft.js";
 
 export function exportNativeMappingReport(
   doc: ProjectDoc,
@@ -13,6 +14,7 @@ export function exportNativeMappingReport(
     documentVersion: doc.version,
     generatedAt,
     isConfluencePageBody: false,
+    confluenceAdfDraft: buildConfluenceAdfDraft(doc),
     mappings: doc.semanticOverlay.map((entry) => ({
       nodeId: entry.nodeId,
       semanticRole: entry.role,

@@ -104,6 +104,17 @@ describe("app model", () => {
     ).toEqual(
       expect.arrayContaining(["status", "callout", "panel", "expand", "code"]),
     );
+    expect(result.nativeMappingReport?.confluenceAdfDraft).toMatchObject({
+      schemaSource: "@atlaskit/adf-schema",
+      validation: {
+        status: "valid",
+        validator: "@atlaskit/adf-schema",
+      },
+      document: {
+        type: "doc",
+        version: 1,
+      },
+    });
   });
 
   it("does not expose selected text for non-direct text containers", () => {

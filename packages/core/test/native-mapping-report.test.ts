@@ -36,4 +36,83 @@ describe("exportNativeMappingReport", () => {
       true,
     );
   });
+
+  it("includes an Atlaskit ADF draft preview for native-compatible roles", () => {
+    const html = `
+      <main>
+        <section>
+          <h1>Release Readiness</h1>
+          <p>Every target needs evidence.</p>
+          <p class="status-pill">On track</p>
+          <aside class="callout" data-confluence-macro="note">
+            <h2>Migration note</h2>
+            <p>Native mapping is a report, not a page body.</p>
+          </aside>
+          <pre><code>npm run verify</code></pre>
+        </section>
+      </main>
+    `;
+    const doc = importHtml({
+      html,
+      title: "Release Readiness",
+      now: "2026-06-22T00:00:00.000Z",
+    });
+
+    const artifact = exportNativeMappingReport(
+      doc,
+      "2026-06-22T00:00:00.000Z",
+    );
+    const report = JSON.parse(artifact.content) as NativeMappingReport;
+
+    expect(report.isConfluencePageBody).toBe(false);
+    expect(report.confluenceAdfDraft?.schemaSource).toBe("@atlaskit/adf-schema");
+    expect(report.confluenceAdfDraft?.validation).toEqual({
+      status: "valid",
+      validator: "@atlaskit/adf-schema",
+    });
+    expect(report.confluenceAdfDraft?.document).toMatchObject({
+      type: "doc",
+      version: 1,
+    });
+    expect(report.confluenceAdfDraft?.document.content).toEqual(
+      expect.arrayContaining([
+        {
+          type: "heading",
+          attrs: { level: 1 },
+          content: [{ type: "text", text: "Release Readiness" }],
+        },
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Every target needs evidence." }],
+        },
+        {
+          type: "panel",
+          attrs: { panelType: "note" },
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Migration note Native mapping is a report, not a page body.",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: "codeBlock",
+          attrs: { language: "text" },
+          content: [{ type: "text", text: "npm run verify" }],
+        },
+      ]),
+    );
+    expect(
+      report.confluenceAdfDraft?.document.content.some(
+        (node) =>
+          node.type === "paragraph" &&
+          node.content?.some((child) => child.type === "status"),
+      ),
+    ).toBe(true);
+  });
 });

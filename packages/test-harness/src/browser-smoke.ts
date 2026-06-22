@@ -106,6 +106,38 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   await page.getByRole("button", { name: "compatibility-report.json" }).click();
   JSON.parse(await page.locator(".artifact-preview code").innerText());
 
+  await page.getByRole("button", { name: "native-mapping-report.json" }).click();
+  const nativeMapping = JSON.parse(
+    await page.locator(".artifact-preview code").innerText(),
+  ) as {
+    isConfluencePageBody: boolean;
+    confluenceAdfDraft?: {
+      schemaSource: string;
+      validation?: { status: string };
+      document?: { type: string; version: number };
+    };
+  };
+  assertEqual(
+    nativeMapping.isConfluencePageBody,
+    false,
+    "Native mapping artifact must remain a report.",
+  );
+  assertEqual(
+    nativeMapping.confluenceAdfDraft?.schemaSource,
+    "@atlaskit/adf-schema",
+    "Native mapping report must expose the Atlaskit ADF draft source.",
+  );
+  assertEqual(
+    nativeMapping.confluenceAdfDraft?.validation?.status,
+    "valid",
+    "ADF draft should validate against the installed schema package.",
+  );
+  assertEqual(
+    nativeMapping.confluenceAdfDraft?.document?.type,
+    "doc",
+    "ADF draft should expose a document node.",
+  );
+
   await page.setViewportSize({ width: 390, height: 900 });
   await page.screenshot({
     path: join(artifactDir, "mobile.png"),

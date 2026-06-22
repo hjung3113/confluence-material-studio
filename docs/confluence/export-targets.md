@@ -45,6 +45,12 @@ It is not a Confluence page body. It is a plan that explains:
 
 The report is valid even when most visual nodes remain fragment-only. Its job is to make native editability limits explicit, not to force conversion.
 
+The report may include `confluenceAdfDraft`, a best-effort Atlassian Document
+Format preview validated with `@atlaskit/adf-schema`. This preview is evidence
+for candidate native mappings only. It is not an API-ready Confluence page body,
+and it must not replace the standalone, fragment, compatibility, or mapping
+artifacts in the MVP export contract.
+
 ## Future Targets
 
 Post-MVP targets may include:

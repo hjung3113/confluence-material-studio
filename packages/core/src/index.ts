@@ -6,6 +6,8 @@ export {
 } from "./compatibility/rules.js";
 export { exportConfluenceFragment } from "./export/confluenceFragment.js";
 export { exportNativeMappingReport } from "./export/nativeMappingReport.js";
+export { buildConfluenceAdfDraft } from "./export/confluenceAdfDraft.js";
+export type { ConfluenceAdfDraft } from "./export/confluenceAdfDraft.js";
 export { exportProject } from "./export/exportProject.js";
 export { exportStandaloneHtml } from "./export/standaloneHtml.js";
 export {

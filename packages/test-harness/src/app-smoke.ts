@@ -25,6 +25,8 @@ const requiredBundleText = [
   "confluence-fragment.html",
   "compatibility-report.json",
   "native-mapping-report.json",
+  "confluenceAdfDraft",
+  "@atlaskit/adf-schema",
   "data-core-node-id",
   "data-editor-host",
   "cms:add-callout",

@@ -37,3 +37,9 @@ For each mapped node, report:
 - rationale
 
 The current core smoke fixture covers status, callout, panel, expand, and code macro candidates. MVP still emits a mapping report only; it does not serialize these as Confluence storage-format macro XML.
+
+`native-mapping-report.json` can also include a `confluenceAdfDraft` section.
+That section is generated with `@atlaskit/adf-schema` to preview simple ADF
+nodes such as headings, paragraphs, panels, statuses, rules, and code blocks.
+It is intentionally nested inside the report so operators can inspect native
+mapping progress without treating the output as a publishable Confluence body.
