@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Confluence Friendly Fixture</title>
+    <style>
+      body {
+        margin: 0;
+      }
+
+      .page-shell {
+        max-width: 840px;
+        margin: 0 auto;
+        overflow-x: auto;
+      }
+
+      .hero {
+        min-height: 60vh;
+      }
+
+      .floating-review {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+      }
+
+      .wide-panel {
+        width: 1200px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page-shell">
+      <section>
+        <h1>Release Readiness</h1>
+        <p>All export targets need explicit compatibility evidence.</p>
+        <p class="status-pill" data-status-color="green">On track</p>
+      </section>
+
+      <aside class="callout" data-confluence-macro="note">
+        <h2>Migration note</h2>
+        <p>Confluence macro output is represented as a mapping report in MVP.</p>
+      </aside>
+
+      <section class="panel">
+        <h2>Validation checklist</h2>
+        <ul>
+          <li>Fragment export stays scoped.</li>
+          <li>Native mapping report does not claim page-body serialization.</li>
+        </ul>
+      </section>
+
+      <details class="expand">
+        <summary>Smoke test evidence</summary>
+        <pre><code class="language-shell">npm run verify</code></pre>
+      </details>
+
+      <section class="wide-panel hero">
+        <h2>Fragment-only layout</h2>
+        <p>Wide and viewport-sized layouts should be reported before Confluence use.</p>
+      </section>
+
+      <div class="floating-review">Review</div>
+    </main>
+  </body>
+</html>

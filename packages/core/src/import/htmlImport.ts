@@ -224,6 +224,18 @@ function collectOverlay(node: RenderNode): SemanticOverlayEntry[] {
 }
 
 function inferRole(node: RenderNode): SemanticRole {
+  if (hasClass(node, "status-pill") || hasClass(node, "status")) {
+    return "status";
+  }
+  if (node.attrs["data-confluence-macro"] || hasClass(node, "callout")) {
+    return "callout";
+  }
+  if (hasClass(node, "panel")) {
+    return "panel";
+  }
+  if (node.tag === "details" || hasClass(node, "expand")) {
+    return "expand";
+  }
   if (node.tag === "document" || node.tag === "main" || node.tag === "body") {
     return "document";
   }
@@ -238,6 +250,10 @@ function inferRole(node: RenderNode): SemanticRole {
   return "rawHtml";
 }
 
+function hasClass(node: RenderNode, className: string): boolean {
+  return node.classList.includes(className);
+}
+
 function editableFieldsForRole(role: SemanticRole): string[] {
   if (role === "rawHtml") {
     return [];
@@ -249,6 +265,20 @@ function editableFieldsForRole(role: SemanticRole): string[] {
 }
 
 function confluenceMappingForRole(role: SemanticRole): ConfluenceMapping {
+  if (
+    role === "status" ||
+    role === "callout" ||
+    role === "panel" ||
+    role === "expand" ||
+    role === "code"
+  ) {
+    return {
+      recommendedTarget: "macro",
+      expectedVisualLoss: "minor",
+      rationale: "Role has an MVP Confluence macro mapping candidate.",
+    };
+  }
+
   if (role === "rawHtml" || role === "cardGrid") {
     return {
       recommendedTarget: "fragment",

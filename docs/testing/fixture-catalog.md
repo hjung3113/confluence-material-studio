@@ -52,7 +52,12 @@ The complex visual golden slice implements:
 - `fixtures/expected/complex-visual.compatibility-report.json`
 - `fixtures/expected/complex-visual.native-mapping-report.json`
 
-The remaining catalog fixtures are outside the implemented core slices and require separate implementation plans:
+The Markdown outline slice implements:
 
 - `fixtures/markdown/product-outline.md`
+
+The Confluence-friendly fixture slice implements:
+
 - `fixtures/html/confluence-friendly.html`
+
+The current initial fixture catalog is implemented for the core MVP import/export slices. Future fixture additions require separate implementation plans.

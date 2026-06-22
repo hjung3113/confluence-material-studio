@@ -9,6 +9,7 @@ export { exportNativeMappingReport } from "./export/nativeMappingReport.js";
 export { exportProject } from "./export/exportProject.js";
 export { exportStandaloneHtml } from "./export/standaloneHtml.js";
 export { importHtml } from "./import/htmlImport.js";
+export { importMarkdown } from "./import/markdownImport.js";
 export { sanitizeHtml } from "./sanitize/sanitizeHtml.js";
 export type {
   CompatibilityRule,
@@ -17,4 +18,5 @@ export type {
 export type * from "./document/types.js";
 export type { ExportProjectOptions } from "./export/exportProject.js";
 export type { ImportHtmlInput } from "./import/htmlImport.js";
+export type { ImportMarkdownInput } from "./import/markdownImport.js";
 export type { SanitizedHtml } from "./sanitize/sanitizeHtml.js";

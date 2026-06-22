@@ -30,6 +30,8 @@ Markdown/outline import stages:
 6. Run compatibility rules.
 7. Emit import report.
 
+The current MVP Markdown subset covers headings, paragraphs, ordered and unordered lists, and fenced code blocks.
+
 ## Export Pipeline
 
 All exporters return:
@@ -96,6 +98,7 @@ Contract:
 - Explain which nodes can map to native Confluence content or macros.
 - Explain which nodes are fragment-only or future iframe/Forge candidates.
 - Do not claim to be a Confluence page body.
+- Treat status, callout, panel, expand, and code roles as macro candidates in the mapping report.
 
 ## Failure Modes
 

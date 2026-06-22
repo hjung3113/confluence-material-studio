@@ -422,11 +422,11 @@
     },
     {
       "nodeId": "node-53",
-      "semanticRole": "rawHtml",
-      "recommendedTarget": "fragment",
-      "expectedVisualLoss": "material",
+      "semanticRole": "callout",
+      "recommendedTarget": "macro",
+      "expectedVisualLoss": "minor",
       "compatibilityRuleIds": [],
-      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+      "rationale": "Role has an MVP Confluence macro mapping candidate."
     },
     {
       "nodeId": "node-54",
@@ -550,11 +550,11 @@
     },
     {
       "nodeId": "node-69",
-      "semanticRole": "rawHtml",
-      "recommendedTarget": "fragment",
-      "expectedVisualLoss": "material",
+      "semanticRole": "status",
+      "recommendedTarget": "macro",
+      "expectedVisualLoss": "minor",
       "compatibilityRuleIds": [],
-      "rationale": "Importer preserved this node but did not recognize a safe native Confluence structure."
+      "rationale": "Role has an MVP Confluence macro mapping candidate."
     },
     {
       "nodeId": "node-70",

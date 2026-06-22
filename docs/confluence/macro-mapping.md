@@ -36,3 +36,4 @@ For each mapped node, report:
 - compatibility rule IDs
 - rationale
 
+The current core smoke fixture covers status, callout, panel, expand, and code macro candidates. MVP still emits a mapping report only; it does not serialize these as Confluence storage-format macro XML.

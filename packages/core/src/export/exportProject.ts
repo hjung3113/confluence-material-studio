@@ -1,4 +1,5 @@
 import { getCompatibilityRule } from "../compatibility/rules.js";
+import { detectCompatibilityWarnings } from "../compatibility/detectCompatibility.js";
 import type {
   CompatibilityReport,
   CompatibilityWarning,
@@ -50,32 +51,39 @@ function buildCompatibilityReport(
   return {
     documentVersion: doc.version,
     generatedAt,
-    warnings: doc.transformationTrace.flatMap((entry) => {
-      if (!entry.ruleId) {
-        return [];
-      }
-
-      const rule = getCompatibilityRule(entry.ruleId);
-
-      if (!rule) {
-        return [];
-      }
-
-      const warning: CompatibilityWarning = {
-        ruleId: rule.id,
-        target: rule.target,
-        severity: rule.severity,
-        message: entry.message || rule.message,
-        recommendation: rule.recommendation,
-      };
-
-      if (entry.nodeId) {
-        warning.nodeId = entry.nodeId;
-      }
-
-      return [warning];
-    }),
+    warnings: [
+      ...warningsFromTrace(doc),
+      ...detectCompatibilityWarnings(doc),
+    ],
   };
+}
+
+function warningsFromTrace(doc: ProjectDoc): CompatibilityWarning[] {
+  return doc.transformationTrace.flatMap((entry) => {
+    if (!entry.ruleId) {
+      return [];
+    }
+
+    const rule = getCompatibilityRule(entry.ruleId);
+
+    if (!rule) {
+      return [];
+    }
+
+    const warning: CompatibilityWarning = {
+      ruleId: rule.id,
+      target: rule.target,
+      severity: rule.severity,
+      message: entry.message || rule.message,
+      recommendation: rule.recommendation,
+    };
+
+    if (entry.nodeId) {
+      warning.nodeId = entry.nodeId;
+    }
+
+    return [warning];
+  });
 }
 
 function compatibilityReportArtifact(

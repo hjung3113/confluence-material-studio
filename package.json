@@ -9,6 +9,7 @@
   "scripts": {
     "test": "npm test --workspaces",
     "typecheck": "npm run typecheck --workspaces",
+    "smoke": "npm test --workspace @htmleditor/core -- mvp-smoke.test.ts",
     "verify": "npm run typecheck --workspaces && npm test --workspaces"
   },
   "devDependencies": {

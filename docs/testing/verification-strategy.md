@@ -43,13 +43,21 @@ Required flows:
 
 ## Current Verification Command
 
-For the first core vertical slice, run:
+For the core MVP slices, run:
 
 ```bash
 npm run verify
 ```
 
 This command typechecks `packages/core` and runs the Vitest suite for document model, compatibility rules, sanitizer, import, and export behavior.
+
+For a focused MVP smoke flow, run:
+
+```bash
+npm run smoke
+```
+
+This imports the supported HTML fixtures, Markdown outline fixture, hostile fixture, and Confluence-friendly fixture, then exports all four MVP artifacts and checks hostile sanitization plus Confluence macro/risk reporting.
 
 ## Completion Rule
 

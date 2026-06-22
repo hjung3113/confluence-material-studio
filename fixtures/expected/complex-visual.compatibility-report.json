@@ -1,5 +1,14 @@
 {
   "documentVersion": "0.1.0",
   "generatedAt": "2026-06-21T00:00:00.000Z",
-  "warnings": []
+  "warnings": [
+    {
+      "ruleId": "CF_FRAGMENT_GLOBAL_SELECTOR",
+      "target": "confluence-fragment",
+      "severity": "warning",
+      "message": "Global selectors can leak or be overridden.",
+      "recommendation": "Scope selectors under the generated wrapper.",
+      "nodeId": "node-5"
+    }
+  ]
 }
