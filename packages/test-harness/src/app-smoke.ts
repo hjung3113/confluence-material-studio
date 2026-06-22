@@ -10,7 +10,10 @@ const requiredShellText = [
 ];
 
 const requiredBundleText = [
-  "Source fixture",
+  "HTML draft",
+  "Import HTML draft",
+  "Selected text",
+  "Apply text",
   "Section navigator",
   "Live canvas",
   "Inspector",

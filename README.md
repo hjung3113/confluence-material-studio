@@ -30,15 +30,17 @@ Vite가 출력하는 로컬 주소를 브라우저에서 엽니다. 기본적으
 
 앱은 `packages/app`에 있는 Vite/TypeScript 기반 MVP 편집 shell입니다. 파싱, sanitizing, export 로직은 직접 구현하지 않고 `packages/core` API를 호출합니다.
 
-### 1. 소스 선택
+### 1. HTML 초안 가져오기
 
-왼쪽 `Source fixture`에서 입력 예제를 선택합니다.
+왼쪽 패널에 `Draft title`과 `HTML draft`를 입력한 뒤 `Import HTML draft`를 누릅니다.
+
+가져온 HTML은 `packages/core`의 sanitizer/import pipeline을 통과해 `ProjectDoc`으로 변환되고, 중앙 canvas와 오른쪽 inspector/export 정보가 갱신됩니다.
+
+예제 데이터를 빠르게 열고 싶을 때는 보조 버튼을 사용합니다.
 
 - `Confluence friendly`: Confluence macro 후보와 fragment 위험을 확인하는 HTML 예제
 - `Markdown outline`: Markdown/outline import 예제
 - `Hostile HTML`: script, inline handler, remote resource, JavaScript URL 제거/경고 예제
-
-선택 즉시 문서가 `ProjectDoc`으로 import되고, 중앙 canvas와 오른쪽 inspector/export 정보가 갱신됩니다.
 
 ### 2. 섹션 탐색
 
@@ -57,8 +59,10 @@ Vite가 출력하는 로컬 주소를 브라우저에서 엽니다. 기본적으
 오른쪽 `Inspector`에서 다음 작업을 할 수 있습니다.
 
 - `Select title`: 첫 title 노드를 선택
-- `Inline text`: 선택 노드의 텍스트 변경
+- `Selected text`: 선택 노드의 텍스트 수정
+- `Apply text`: 수정한 텍스트를 canvas와 export output에 반영
 - `Accent`: theme token의 accent 색상 변경
+- `Move section up`: 선택 section 순서 위로 이동
 - `Move section down`: 선택 section 순서 변경
 - `Duplicate section`: 선택 section 복제
 - `Delete section`: 선택 section 삭제
@@ -74,7 +78,7 @@ Vite가 출력하는 로컬 주소를 브라우저에서 엽니다. 기본적으
 - `compatibility-report.json`
 - `native-mapping-report.json`
 
-현재 앱은 파일 다운로드 UI까지 만들지는 않았습니다. smoke와 core tests에서 `exportProject()`가 네 산출물을 생성하는지 검증합니다.
+artifact 버튼을 누르면 현재 export 내용을 오른쪽 preview에서 확인할 수 있습니다. smoke와 core tests에서 `exportProject()`가 네 산출물을 생성하는지 검증합니다.
 
 ### 6. Confluence 호환성 확인
 

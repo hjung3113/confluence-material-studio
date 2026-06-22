@@ -7,6 +7,8 @@ import {
   deleteSelectedSection,
   duplicateSelectedSection,
   editSelectedText,
+  getExportArtifact,
+  getSelectedText,
   exportCurrentProject,
   importFixture,
   reorderSelectedSection,
@@ -104,5 +106,32 @@ describe("app model", () => {
       "HTML_INLINE_HANDLER_REMOVED",
       "HTML_JAVASCRIPT_URL",
     ]);
+  });
+
+  it("imports a user HTML draft, exposes selected text, and reads export artifact content", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "User Draft",
+      content:
+        "<main><section><h1>Initial proposal</h1><p>Replace this paragraph.</p></section></main>",
+    });
+
+    expect(getSelectedText(state)).toBe("Initial proposal");
+
+    state = editSelectedText(state, "Reviewed launch proposal");
+    const exported = exportCurrentProject(state);
+
+    expect(getSelectedText(state)).toBe("Reviewed launch proposal");
+    expect(getExportArtifact(exported, "standalone.html")).toContain(
+      "Reviewed launch proposal",
+    );
+    expect(getExportArtifact(exported, "confluence-fragment.html")).toContain(
+      "Reviewed launch proposal",
+    );
   });
 });

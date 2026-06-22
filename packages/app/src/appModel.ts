@@ -89,6 +89,30 @@ export function editSelectedText(state: AppState, text: string): AppState {
   };
 }
 
+export function getSelectedText(state: AppState): string {
+  if (!state.doc || !state.selectedNodeId) {
+    return "";
+  }
+
+  const selectedNode = findNode(state.doc.renderTree, state.selectedNodeId);
+
+  if (!selectedNode) {
+    return "";
+  }
+
+  return textContent(selectedNode);
+}
+
+export function getExportArtifact(
+  exportResult: ExportResult,
+  filename: string,
+): string {
+  return (
+    exportResult.artifacts.find((artifact) => artifact.filename === filename)
+      ?.content ?? ""
+  );
+}
+
 export function updateThemeColor(
   state: AppState,
   color: keyof ProjectDoc["themeTokens"]["colors"],
@@ -210,6 +234,14 @@ export function listSections(doc: ProjectDoc): RenderNode[] {
 }
 
 function firstEditableNode(doc: ProjectDoc): RenderNode | undefined {
+  const preferredTitle = doc.semanticOverlay.find(
+    (entry) => entry.role === "title" && entry.editableFields.includes("text"),
+  );
+
+  if (preferredTitle) {
+    return findNode(doc.renderTree, preferredTitle.nodeId);
+  }
+
   const editableEntry = doc.semanticOverlay.find((entry) =>
     entry.editableFields.includes("text"),
   );
@@ -249,6 +281,14 @@ function replaceText(node: RenderNode, text: string): RenderNode {
       },
     ],
   };
+}
+
+function textContent(node: RenderNode): string {
+  if (node.tag === "#text") {
+    return node.text ?? "";
+  }
+
+  return node.children.map((child) => textContent(child)).join("");
 }
 
 function updateNode(
