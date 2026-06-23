@@ -48,7 +48,7 @@ Vite가 출력하는 로컬 주소를 브라우저에서 엽니다. 기본적으
 
 중앙 canvas는 GrapesJS 기반 시각 미리보기지만, 제품의 원본 모델은 계속 `ProjectDoc`입니다. export는 GrapesJS의 `getHtml()` 결과가 아니라 `packages/core`의 `exportProject()`를 사용합니다.
 
-상단의 `desktop`, `tablet`, `mobile` 버튼으로 preview width를 바꿀 수 있습니다. 이 기능은 Confluence 폭 제약과 독립 HTML 미리보기를 비교하기 위한 MVP 수준의 확인 도구입니다.
+상단의 `desktop`, `tablet`, `mobile` 버튼으로 preview width를 바꿀 수 있습니다. 이 기능은 기존 MVP 호환성 확인 도구로 유지하지만, 현재 개발 초점은 모바일/태블릿 기능 확장이 아니라 desktop 중심 canvas 편집과 export 경계 안정화입니다.
 
 ### 4. 텍스트 편집
 
@@ -83,6 +83,8 @@ Vite가 출력하는 로컬 주소를 브라우저에서 엽니다. 기본적으
 
 artifact 버튼을 누르면 현재 export 내용을 preview에서 확인할 수 있습니다. smoke와 core tests에서 `exportProject()`가 네 산출물을 생성하는지 검증합니다.
 
+앱 초기 로딩 경로는 schema-heavy ADF export 코드를 바로 불러오지 않습니다. `Export evidence`를 열 때 `packages/core`의 export 경로를 lazy load하고, export 결과는 문서가 바뀌기 전까지 drawer에서 재사용합니다. 문서를 수정하면 오래된 export evidence가 남지 않도록 export drawer를 닫고 cache를 무효화합니다.
+
 ### 7. Confluence 호환성 확인
 
 export drawer의 `Compatibility warnings`는 export 대상별 위험을 stable rule ID로 보여줍니다.
@@ -100,6 +102,8 @@ export drawer의 `Compatibility warnings`는 export 대상별 위험을 stable r
 
 `native-mapping-report.json`은 Confluence native/macro/fragment 후보를 보고합니다. 현재 MVP는 `status`, `callout`, `panel`, `expand`, `code`를 macro 후보로 보고하고, ADF draft preview를 포함하지만 실제 Confluence page body로 간주하지 않습니다.
 
+ADF draft preview는 export 시점의 보고서 안에만 들어갑니다. 앱 초기 bundle에는 `@atlaskit/adf-schema`, ProseMirror 계열 코드, `confluenceAdfDraft` marker가 들어가지 않아야 하며, `packages/test-harness`의 app smoke가 이 경계를 검증합니다.
+
 ## 검증 명령
 
 core MVP smoke만 실행합니다.
@@ -116,7 +120,22 @@ npm run smoke
 npm run app:smoke
 ```
 
-이 명령은 `packages/app`을 build한 뒤, built asset에 MVP editor shell과 Confluence compatibility marker가 포함되어 있는지 확인합니다.
+이 명령은 `packages/app`을 build한 뒤, built asset에 MVP editor shell과 Confluence compatibility marker가 포함되어 있는지 확인합니다. 동시에 초기 app bundle에 다음 marker가 들어가지 않는지도 확인합니다.
+
+- `@atlaskit/adf-schema`
+- `prosemirror`
+- `nodeFromJSON`
+- `confluenceAdfDraft`
+- `https://app.grapesjs.com`
+- `https://cdnjs.cloudflare.com`
+
+실제 Chrome 기반 canvas 흐름을 확인합니다.
+
+```bash
+npm run browser:smoke
+```
+
+이 명령은 build된 app을 로컬 static server로 띄운 뒤 Chrome에서 샘플 로드, canvas 선택, 텍스트 편집, 제한 block 삽입, sanitizer import, lazy export drawer, 네 export artifact, `isConfluencePageBody: false`를 확인합니다. 현재 browser smoke는 desktop flow만 검증하며 모바일/태블릿 스크린샷 검증은 중지했습니다.
 
 전체 검증을 실행합니다.
 
@@ -133,6 +152,8 @@ npm run verify
 - app build
 - app smoke
 
+시각 editor 흐름을 바꾸거나 export drawer/lazy loading을 바꾼 경우에는 `npm run verify`에 더해 `npm run browser:smoke`까지 실행합니다.
+
 ## Confluence 호환 경계
 
 `confluence-fragment.html`은 HTML-capable Confluence context를 위한 scoped HTML fragment입니다. 모든 Confluence tenant/editor/storage format에서 그대로 페이지 본문이 된다고 보장하지 않습니다.
@@ -140,6 +161,8 @@ npm run verify
 `native-mapping-report.json`은 항상 `isConfluencePageBody: false`를 유지합니다. 이 파일은 어떤 node가 native content, macro, fragment, future iframe/Forge 후보인지 설명하는 보고서입니다.
 
 MVP에서 Confluence API publish/update, attachment upload, Forge macro deployment, 실제 storage-format serialization은 범위 밖입니다.
+
+GrapesJS는 app-layer canvas adapter로만 사용합니다. 기본 builder panel/block/style manager를 제품 기능으로 열지 않고, telemetry와 remote icon CSS 기본값은 app 설정과 build transform에서 차단합니다.
 
 ## 프로젝트 구조
 
