@@ -62,6 +62,16 @@ async function runSmoke(page: Page, url: string): Promise<void> {
 
   await page.getByRole("button", { name: "Add callout" }).click();
   await expectText(page, "Review note");
+  await page.locator(".block-palette button", { hasText: "Title" }).click();
+  await expectText(page, "New title");
+  await page.locator(".block-palette button", { hasText: "Paragraph" }).click();
+  await expectText(page, "New paragraph");
+  await page.locator(".block-palette button", { hasText: "Divider" }).click();
+  assertEqual(
+    await frame.locator("hr").count(),
+    1,
+    "Divider block should render as a horizontal rule.",
+  );
 
   await page.screenshot({
     path: join(artifactDir, "desktop.png"),

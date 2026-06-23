@@ -4,8 +4,10 @@ import {
   importHtml,
   importMarkdown,
   insertCalloutAfterNode,
+  insertMaterialBlockAfterNode,
   renderTreeToHtml,
   type ExportResult,
+  type MaterialBlockType,
   type ProjectDoc,
   type RenderNode,
   type SemanticRole,
@@ -136,6 +138,33 @@ export function insertCalloutAfterSelection(
     ...state,
     doc,
     selectedNodeId: calloutEntry?.nodeId ?? state.selectedNodeId,
+  };
+}
+
+export function insertMaterialBlockAfterSelection(
+  state: AppState,
+  blockType: MaterialBlockType,
+): AppState {
+  if (!state.doc || !state.selectedNodeId) {
+    return state;
+  }
+
+  const doc = insertMaterialBlockAfterNode(state.doc, {
+    anchorNodeId: state.selectedNodeId,
+    blockType,
+    createdAt: state.now,
+  });
+
+  if (doc === state.doc) {
+    return state;
+  }
+
+  const insertedEntry = doc.semanticOverlay.at(-1);
+
+  return {
+    ...state,
+    doc,
+    selectedNodeId: insertedEntry?.nodeId ?? state.selectedNodeId,
   };
 }
 

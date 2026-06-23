@@ -60,6 +60,7 @@ describe("GrapesJS canvas adapter boundary", () => {
       "getSelectedNodeId",
       "setSelectedText",
       "addCallout",
+      "addMaterialBlock",
       "setPreviewWidth",
       "destroy",
     ] satisfies Array<keyof GrapesCanvasAdapter>;

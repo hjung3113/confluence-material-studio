@@ -13,7 +13,9 @@ export { exportStandaloneHtml } from "./export/standaloneHtml.js";
 export {
   editNodeText,
   insertCalloutAfterNode,
+  insertMaterialBlockAfterNode,
 } from "./document/editOperations.js";
+export type { MaterialBlockType } from "./document/editOperations.js";
 export { renderTreeToHtml } from "./document/renderTreeHtml.js";
 export { importHtml } from "./import/htmlImport.js";
 export { importMarkdown } from "./import/markdownImport.js";

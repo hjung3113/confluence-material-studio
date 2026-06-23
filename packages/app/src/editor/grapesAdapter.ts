@@ -4,6 +4,7 @@ import {
   type Editor,
   type EditorConfig,
 } from "grapesjs";
+import type { MaterialBlockType } from "@htmleditor/core";
 import "grapesjs/dist/css/grapes.min.css";
 import { getAllowedBlockDefinitions } from "./blockPalette.js";
 
@@ -16,6 +17,7 @@ export type GrapesCanvasAdapterOptions = {
   previewWidth: GrapesPreviewWidth;
   onSelectionChange: (nodeId: string | undefined) => void;
   onAddCallout: () => void;
+  onAddMaterialBlock: (blockType: MaterialBlockType) => void;
   onSetSelectedText?: (text: string) => void;
 };
 
@@ -24,6 +26,7 @@ export type GrapesCanvasAdapter = {
   getSelectedNodeId: () => string | undefined;
   setSelectedText: (text: string) => void;
   addCallout: () => void;
+  addMaterialBlock: (blockType: MaterialBlockType) => void;
   setPreviewWidth: (previewWidth: GrapesPreviewWidth) => void;
   destroy: () => void;
 };
@@ -60,6 +63,9 @@ export function createGrapesCanvasAdapter(
     },
     addCallout() {
       editor.runCommand("cms:add-callout");
+    },
+    addMaterialBlock(blockType) {
+      options.onAddMaterialBlock(blockType);
     },
     setPreviewWidth(previewWidth) {
       setEditorPreviewWidth(editor, previewWidth);

@@ -12,6 +12,7 @@ import {
   exportCurrentProject,
   importFixture,
   importSampleMaterial,
+  insertMaterialBlockAfterSelection,
   insertCalloutAfterSelection,
   selectNodeByRole,
   setPreviewWidth,
@@ -62,6 +63,31 @@ describe("app model", () => {
       ),
     ).toBe(true);
   });
+
+  it("inserts constrained title, paragraph, and divider blocks through the app model", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importSampleMaterial(state);
+    state = insertMaterialBlockAfterSelection(state, "title");
+    expect(getSelectedText(state)).toBe("New title");
+
+    state = insertMaterialBlockAfterSelection(state, "paragraph");
+    expect(getSelectedText(state)).toBe("New paragraph");
+
+    state = insertMaterialBlockAfterSelection(state, "divider");
+    const exported = exportCurrentProject(state);
+
+    expect(getCanvasHtml(state)).toContain("New title");
+    expect(getCanvasHtml(state)).toContain("New paragraph");
+    expect(getCanvasHtml(state)).toContain("<hr");
+    expect(getExportArtifact(exported, "standalone.html")).toContain(
+      "New paragraph",
+    );
+  });
+
 
   it("imports, edits, previews, and exports an HTML fixture", () => {
     let state = createAppState({

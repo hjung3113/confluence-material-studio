@@ -9,12 +9,18 @@ import {
   importFixture,
   importSampleMaterial,
   insertCalloutAfterSelection,
+  insertMaterialBlockAfterSelection,
   listSections,
   setPreviewWidth,
   type AppState,
   type PreviewWidth,
 } from "./appModel.js";
-import type { ExportResult, RenderNode, SemanticOverlayEntry } from "@htmleditor/core";
+import type {
+  ExportResult,
+  MaterialBlockType,
+  RenderNode,
+  SemanticOverlayEntry,
+} from "@htmleditor/core";
 import {
   createGrapesCanvasAdapter,
   type GrapesCanvasAdapter,
@@ -201,6 +207,17 @@ function bindEvents(): void {
     });
   });
 
+  appRoot.querySelectorAll<HTMLButtonElement>("[data-block-type]").forEach(
+    (button) => {
+      button.addEventListener("click", () => {
+        canvasAdapter?.addMaterialBlock(
+          button.dataset.blockType as MaterialBlockType,
+        );
+        render();
+      });
+    },
+  );
+
   appRoot.querySelectorAll<HTMLButtonElement>("[data-preview]").forEach(
     (button) => {
       button.addEventListener("click", () => {
@@ -261,11 +278,26 @@ function previewButton(width: PreviewWidth): string {
 function allowedBlockButtons(): string {
   return allowedBlockLabels()
     .map((label) => {
-      const action = label === "Callout / Note" ? "add-callout" : "";
-      const disabled = action ? "" : " disabled";
-      return `<button data-action="${action}"${disabled}>${escapeHtml(label)}</button>`;
+      const blockType = blockTypeForLabel(label);
+      return `<button data-block-type="${blockType}">${escapeHtml(label)}</button>`;
     })
     .join("");
+}
+
+function blockTypeForLabel(label: string): MaterialBlockType {
+  if (label === "Title") {
+    return "title";
+  }
+
+  if (label === "Paragraph") {
+    return "paragraph";
+  }
+
+  if (label === "Divider") {
+    return "divider";
+  }
+
+  return "callout";
 }
 
 function outlineButtons(): string {
@@ -440,6 +472,9 @@ function syncCanvasAdapter(): void {
         title: "Review note",
         body: "Confirm the Confluence fragment before sharing.",
       });
+    },
+    onAddMaterialBlock: (blockType) => {
+      state = insertMaterialBlockAfterSelection(state, blockType);
     },
   });
 }

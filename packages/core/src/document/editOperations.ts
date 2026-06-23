@@ -19,6 +19,14 @@ export type InsertCalloutAfterNodeInput = {
   createdAt: string;
 };
 
+export type MaterialBlockType = "title" | "paragraph" | "callout" | "divider";
+
+export type InsertMaterialBlockAfterNodeInput = {
+  anchorNodeId: string;
+  blockType: MaterialBlockType;
+  createdAt: string;
+};
+
 export function editNodeText(
   doc: ProjectDoc,
   input: EditNodeTextInput,
@@ -63,6 +71,41 @@ export function insertCalloutAfterNode(
       traceEntry(doc, {
         message: "Inserted callout block.",
         nodeId: callout.id,
+        createdAt: input.createdAt,
+      }),
+    ],
+  };
+}
+
+export function insertMaterialBlockAfterNode(
+  doc: ProjectDoc,
+  input: InsertMaterialBlockAfterNodeInput,
+): ProjectDoc {
+  if (!hasNode(doc.renderTree, input.anchorNodeId)) {
+    return doc;
+  }
+
+  if (input.blockType === "callout") {
+    return insertCalloutAfterNode(doc, {
+      anchorNodeId: input.anchorNodeId,
+      title: "Review note",
+      body: "Confirm the Confluence fragment before sharing.",
+      createdAt: input.createdAt,
+    });
+  }
+
+  const sequence = { value: maxNodeNumber(doc.renderTree) };
+  const block = createMaterialBlockNode(sequence, input.blockType);
+
+  return {
+    ...doc,
+    renderTree: insertAfterNode(doc.renderTree, input.anchorNodeId, block),
+    semanticOverlay: [...doc.semanticOverlay, materialBlockOverlay(block.id, input.blockType)],
+    transformationTrace: [
+      ...doc.transformationTrace,
+      traceEntry(doc, {
+        message: `Inserted ${input.blockType} block.`,
+        nodeId: block.id,
         createdAt: input.createdAt,
       }),
     ],
@@ -169,6 +212,42 @@ function createCalloutNode(
   };
 }
 
+function createMaterialBlockNode(
+  sequence: { value: number },
+  blockType: Exclude<MaterialBlockType, "callout">,
+): RenderNode {
+  if (blockType === "title") {
+    return {
+      id: nextNodeId(sequence),
+      tag: "h2",
+      attrs: {},
+      classList: [],
+      inlineStyle: {},
+      children: [textNode(sequence, "New title")],
+    };
+  }
+
+  if (blockType === "paragraph") {
+    return {
+      id: nextNodeId(sequence),
+      tag: "p",
+      attrs: {},
+      classList: [],
+      inlineStyle: {},
+      children: [textNode(sequence, "New paragraph")],
+    };
+  }
+
+  return {
+    id: nextNodeId(sequence),
+    tag: "hr",
+    attrs: {},
+    classList: [],
+    inlineStyle: {},
+    children: [],
+  };
+}
+
 function textNode(sequence: { value: number }, text: string): RenderNode {
   return {
     id: nextNodeId(sequence),
@@ -191,11 +270,52 @@ function calloutOverlay(nodeId: string): SemanticOverlayEntry {
   };
 }
 
+function materialBlockOverlay(
+  nodeId: string,
+  blockType: Exclude<MaterialBlockType, "callout">,
+): SemanticOverlayEntry {
+  if (blockType === "title") {
+    return {
+      nodeId,
+      role: "title",
+      editableFields: ["text", "style"],
+      confluenceMapping: nativeMapping(),
+      warnings: [],
+    };
+  }
+
+  if (blockType === "paragraph") {
+    return {
+      nodeId,
+      role: "paragraph",
+      editableFields: ["text", "style"],
+      confluenceMapping: nativeMapping(),
+      warnings: [],
+    };
+  }
+
+  return {
+    nodeId,
+    role: "rawHtml",
+    editableFields: [],
+    confluenceMapping: nativeMapping(),
+    warnings: [],
+  };
+}
+
 function macroMapping(): ConfluenceMapping {
   return {
     recommendedTarget: "macro",
     expectedVisualLoss: "minor",
     rationale: "Role has an MVP Confluence macro mapping candidate.",
+  };
+}
+
+function nativeMapping(): ConfluenceMapping {
+  return {
+    recommendedTarget: "native",
+    expectedVisualLoss: "minor",
+    rationale: "Role has an MVP native mapping candidate.",
   };
 }
 

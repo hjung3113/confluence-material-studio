@@ -30,59 +30,62 @@ Vite가 출력하는 로컬 주소를 브라우저에서 엽니다. 기본적으
 
 앱은 `packages/app`에 있는 Vite/TypeScript 기반 MVP 편집 shell입니다. 파싱, sanitizing, export 로직은 직접 구현하지 않고 `packages/core` API를 호출합니다.
 
-### 1. HTML 초안 가져오기
+### 1. 기본 샘플에서 바로 시작
 
-왼쪽 패널에 `Draft title`과 `HTML draft`를 입력한 뒤 `Import HTML draft`를 누릅니다.
+앱을 열면 `Release Readiness` 샘플 문서가 바로 canvas에 표시됩니다. 먼저 제목을 클릭하고 오른쪽 inspector에서 텍스트를 바꿔 export까지 확인할 수 있습니다.
 
-가져온 HTML은 `packages/core`의 sanitizer/import pipeline을 통과해 `ProjectDoc`으로 변환되고, 중앙 canvas와 오른쪽 inspector/export 정보가 갱신됩니다.
+이 샘플은 앱이 빈 화면으로 시작하지 않도록 하는 개발자용 기본 문서입니다. 실제 사용 시에는 상단 `Import` 버튼으로 HTML 초안을 가져옵니다.
 
-예제 데이터를 빠르게 열고 싶을 때는 보조 버튼을 사용합니다.
+### 2. HTML 초안 가져오기
 
-- `Confluence friendly`: Confluence macro 후보와 fragment 위험을 확인하는 HTML 예제
-- `Markdown outline`: Markdown/outline import 예제
-- `Hostile HTML`: script, inline handler, remote resource, JavaScript URL 제거/경고 예제
+상단 `Import`를 누르면 오른쪽 drawer가 열립니다. `Draft title`과 `HTML draft`를 입력하거나 `.html` 파일을 선택한 뒤 `Import sanitized HTML`을 누릅니다.
 
-### 2. 섹션 탐색
+가져온 HTML은 `packages/core`의 sanitizer/import pipeline을 통과해 `ProjectDoc`으로 변환됩니다. raw HTML은 GrapesJS canvas에 직접 들어가지 않고, sanitizer를 통과한 render tree HTML만 미리보기로 로드됩니다.
 
-왼쪽 `Sections` 영역은 import된 문서의 section 목록입니다.
+### 3. 문서 outline과 canvas 선택
 
-섹션 버튼을 누르면 해당 section이 선택됩니다. 선택된 section은 inspector 작업의 기준이 됩니다.
+왼쪽 `Document outline`은 import된 문서의 주요 node를 보여줍니다. outline 항목을 누르거나 중앙 `Visual canvas`의 텍스트/블록을 클릭하면 해당 node가 선택됩니다.
 
-### 3. 라이브 canvas 확인
-
-중앙 `Live canvas`는 `renderTree`를 기반으로 렌더링한 미리보기입니다.
+중앙 canvas는 GrapesJS 기반 시각 미리보기지만, 제품의 원본 모델은 계속 `ProjectDoc`입니다. export는 GrapesJS의 `getHtml()` 결과가 아니라 `packages/core`의 `exportProject()`를 사용합니다.
 
 상단의 `desktop`, `tablet`, `mobile` 버튼으로 preview width를 바꿀 수 있습니다. 이 기능은 Confluence 폭 제약과 독립 HTML 미리보기를 비교하기 위한 MVP 수준의 확인 도구입니다.
 
-### 4. 텍스트와 테마 편집
+### 4. 텍스트 편집
 
-오른쪽 `Inspector`에서 다음 작업을 할 수 있습니다.
+오른쪽 `Inspector`는 선택된 node와 Confluence 호환성 힌트를 보여줍니다.
 
-- `Select title`: 첫 title 노드를 선택
-- `Selected text`: 선택 노드의 텍스트 수정
-- `Apply text`: 수정한 텍스트를 canvas와 export output에 반영
-- `Accent`: theme token의 accent 색상 변경
-- `Move section up`: 선택 section 순서 위로 이동
-- `Move section down`: 선택 section 순서 변경
-- `Duplicate section`: 선택 section 복제
-- `Delete section`: 선택 section 삭제
+선택된 node가 직접 text child를 가진 경우:
 
-편집은 app layer에서 `ProjectDoc` mutation으로 처리되며, 시각 출력에 영향을 주는 변경은 `renderTree`에 반영됩니다.
+- `Selected text`에서 텍스트를 수정
+- `Apply text`로 canvas와 export output에 반영
 
-### 5. Export 결과 확인
+복합 구조나 보존된 import 구조처럼 직접 텍스트 수정이 안전하지 않은 node는 잠긴 상태로 표시됩니다.
 
-오른쪽 `Export artifacts`에는 MVP export 4종이 표시됩니다.
+### 5. 제한된 block 추가
+
+왼쪽 `Allowed blocks`는 MVP에서 허용하는 Confluence material block만 보여줍니다.
+
+- `Title`
+- `Paragraph`
+- `Callout / Note`
+- `Divider`
+
+버튼을 누르면 현재 선택된 node 뒤에 block이 추가됩니다. `Add callout` 상단 버튼은 같은 callout 삽입 동작을 빠르게 실행하는 단축 버튼입니다.
+
+### 6. Export 결과 확인
+
+상단 `Export evidence`를 누르면 export drawer가 열리고 MVP export 4종이 표시됩니다.
 
 - `standalone.html`
 - `confluence-fragment.html`
 - `compatibility-report.json`
 - `native-mapping-report.json`
 
-artifact 버튼을 누르면 현재 export 내용을 오른쪽 preview에서 확인할 수 있습니다. smoke와 core tests에서 `exportProject()`가 네 산출물을 생성하는지 검증합니다.
+artifact 버튼을 누르면 현재 export 내용을 preview에서 확인할 수 있습니다. smoke와 core tests에서 `exportProject()`가 네 산출물을 생성하는지 검증합니다.
 
-### 6. Confluence 호환성 확인
+### 7. Confluence 호환성 확인
 
-`Compatibility warnings`는 export 대상별 위험을 stable rule ID로 보여줍니다.
+export drawer의 `Compatibility warnings`는 export 대상별 위험을 stable rule ID로 보여줍니다.
 
 현재 주요 rule은 다음을 포함합니다.
 
@@ -95,7 +98,7 @@ artifact 버튼을 누르면 현재 export 내용을 오른쪽 preview에서 확
 - `CF_FRAGMENT_GLOBAL_SELECTOR`
 - `CF_FRAGMENT_OVERFLOW_RISK`
 
-`Macro candidates`는 Confluence macro 후보 역할을 보여줍니다. 현재 MVP는 `status`, `callout`, `panel`, `expand`, `code`를 macro 후보로 보고합니다.
+`native-mapping-report.json`은 Confluence native/macro/fragment 후보를 보고합니다. 현재 MVP는 `status`, `callout`, `panel`, `expand`, `code`를 macro 후보로 보고하고, ADF draft preview를 포함하지만 실제 Confluence page body로 간주하지 않습니다.
 
 ## 검증 명령
 
