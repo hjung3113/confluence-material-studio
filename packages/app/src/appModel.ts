@@ -1,15 +1,24 @@
 import {
+  deleteNode,
+  duplicateNode,
   editNodeText,
+  getNodeEditability,
   importHtml,
   importMarkdown,
   insertCalloutAfterNode,
   insertMaterialBlockAfterNode,
+  listEditableTextTargets,
+  moveNode,
   renderTreeToHtml,
+  updateThemeTokens,
+  type EditableTextTarget,
   type ExportResult,
   type MaterialBlockType,
+  type NodeEditability,
   type ProjectDoc,
   type RenderNode,
   type SemanticRole,
+  type ThemeTokenPatch,
 } from "@htmleditor/core/browser";
 
 export type ImportFixtureInput = {
@@ -19,6 +28,16 @@ export type ImportFixtureInput = {
 };
 
 export type PreviewWidth = "desktop" | "tablet" | "mobile";
+
+export type AppHistoryEntry = {
+  doc: ProjectDoc;
+  selectedNodeId: string | undefined;
+};
+
+export type AppHistory = {
+  undo: AppHistoryEntry[];
+  redo: AppHistoryEntry[];
+};
 
 export const sampleMaterial: ImportFixtureInput = {
   kind: "html",
@@ -33,6 +52,7 @@ export type AppState = {
   previewWidth: PreviewWidth;
   now: string;
   generatedAt: string;
+  history: AppHistory;
 };
 
 export function createAppState(options: {
@@ -45,6 +65,7 @@ export function createAppState(options: {
     previewWidth: "desktop",
     now: options.now,
     generatedAt: options.generatedAt,
+    history: { undo: [], redo: [] },
   };
 }
 
@@ -69,6 +90,7 @@ export function importFixture(
     ...state,
     doc,
     selectedNodeId: firstEditableNode(doc)?.id,
+    history: { undo: [], redo: [] },
   };
 }
 
@@ -97,14 +119,17 @@ export function editSelectedText(state: AppState, text: string): AppState {
     return state;
   }
 
-  return {
-    ...state,
-    doc: editNodeText(state.doc, {
-      nodeId: state.selectedNodeId,
-      text,
-      createdAt: state.now,
-    }),
-  };
+  if (getSelectedText(state) === text) {
+    return state;
+  }
+
+  const doc = editNodeText(state.doc, {
+    nodeId: state.selectedNodeId,
+    text,
+    createdAt: state.now,
+  });
+
+  return applyDocMutation(state, doc, state.selectedNodeId);
 }
 
 export function canEditSelectedText(state: AppState): boolean {
@@ -133,11 +158,7 @@ export function insertCalloutAfterSelection(
     .reverse()
     .find((entry) => entry.role === "callout");
 
-  return {
-    ...state,
-    doc,
-    selectedNodeId: calloutEntry?.nodeId ?? state.selectedNodeId,
-  };
+  return applyDocMutation(state, doc, calloutEntry?.nodeId ?? state.selectedNodeId);
 }
 
 export function insertMaterialBlockAfterSelection(
@@ -160,11 +181,144 @@ export function insertMaterialBlockAfterSelection(
 
   const insertedEntry = doc.semanticOverlay.at(-1);
 
+  return applyDocMutation(state, doc, insertedEntry?.nodeId ?? state.selectedNodeId);
+}
+
+export function duplicateSelection(state: AppState): AppState {
+  if (!state.doc || !state.selectedNodeId) {
+    return state;
+  }
+
+  const doc = duplicateNode(state.doc, {
+    nodeId: state.selectedNodeId,
+    createdAt: state.now,
+  });
+
+  return applyDocMutation(
+    state,
+    doc,
+    nextSiblingId(doc.renderTree, state.selectedNodeId) ?? state.selectedNodeId,
+  );
+}
+
+export function deleteSelection(state: AppState): AppState {
+  if (!state.doc || !state.selectedNodeId) {
+    return state;
+  }
+
+  const fallbackSelection = selectionAfterDelete(
+    state.doc.renderTree,
+    state.selectedNodeId,
+  );
+  const doc = deleteNode(state.doc, {
+    nodeId: state.selectedNodeId,
+    createdAt: state.now,
+  });
+
+  return applyDocMutation(state, doc, fallbackSelection);
+}
+
+export function moveSelection(
+  state: AppState,
+  direction: "up" | "down",
+): AppState {
+  if (!state.doc || !state.selectedNodeId) {
+    return state;
+  }
+
+  const doc = moveNode(state.doc, {
+    nodeId: state.selectedNodeId,
+    direction,
+    createdAt: state.now,
+  });
+
+  return applyDocMutation(state, doc, state.selectedNodeId);
+}
+
+export function updateTheme(
+  state: AppState,
+  themeTokens: ThemeTokenPatch,
+): AppState {
+  if (!state.doc) {
+    return state;
+  }
+
+  const doc = updateThemeTokens(state.doc, {
+    themeTokens,
+    createdAt: state.now,
+  });
+
+  return applyDocMutation(state, doc, state.selectedNodeId);
+}
+
+export function undo(state: AppState): AppState {
+  const previous = state.history.undo.at(-1);
+
+  if (!previous || !state.doc) {
+    return state;
+  }
+
   return {
     ...state,
-    doc,
-    selectedNodeId: insertedEntry?.nodeId ?? state.selectedNodeId,
+    doc: previous.doc,
+    selectedNodeId: previous.selectedNodeId,
+    history: {
+      undo: state.history.undo.slice(0, -1),
+      redo: [
+        ...state.history.redo,
+        { doc: state.doc, selectedNodeId: state.selectedNodeId },
+      ],
+    },
   };
+}
+
+export function redo(state: AppState): AppState {
+  const next = state.history.redo.at(-1);
+
+  if (!next || !state.doc) {
+    return state;
+  }
+
+  return {
+    ...state,
+    doc: next.doc,
+    selectedNodeId: next.selectedNodeId,
+    history: {
+      undo: [
+        ...state.history.undo,
+        { doc: state.doc, selectedNodeId: state.selectedNodeId },
+      ],
+      redo: state.history.redo.slice(0, -1),
+    },
+  };
+}
+
+export function getSelectedEditability(state: AppState): NodeEditability {
+  if (!state.doc || !state.selectedNodeId) {
+    return {
+      status: "preserved-only",
+      reason: "Select a canvas element to inspect editability.",
+    };
+  }
+
+  return getNodeEditability(state.doc, state.selectedNodeId);
+}
+
+export function getSelectedEditableTextTargets(
+  state: AppState,
+): EditableTextTarget[] {
+  if (!state.doc || !state.selectedNodeId) {
+    return [];
+  }
+
+  return listEditableTextTargets(state.doc, state.selectedNodeId);
+}
+
+export function shouldShowEditableTextTargetList(state: AppState): boolean {
+  return (
+    getSelectedEditability(state).status === "partially-editable" &&
+    getSelectedEditableTextTargets(state).length > 0
+  );
 }
 
 export function getCanvasHtml(state: AppState): string {
@@ -260,6 +414,75 @@ function findNode(node: RenderNode, nodeId: string): RenderNode | undefined {
 
   for (const child of node.children) {
     const found = findNode(child, nodeId);
+
+    if (found) {
+      return found;
+    }
+  }
+
+  return undefined;
+}
+
+function applyDocMutation(
+  state: AppState,
+  doc: ProjectDoc,
+  selectedNodeId: string | undefined,
+): AppState {
+  if (!state.doc || doc === state.doc) {
+    return state;
+  }
+
+  return {
+    ...state,
+    doc,
+    selectedNodeId,
+    history: {
+      undo: [
+        ...state.history.undo,
+        { doc: state.doc, selectedNodeId: state.selectedNodeId },
+      ],
+      redo: [],
+    },
+  };
+}
+
+function nextSiblingId(
+  node: RenderNode,
+  nodeId: string,
+): string | undefined {
+  const childIndex = node.children.findIndex((child) => child.id === nodeId);
+
+  if (childIndex !== -1) {
+    return node.children[childIndex + 1]?.id;
+  }
+
+  for (const child of node.children) {
+    const found = nextSiblingId(child, nodeId);
+
+    if (found) {
+      return found;
+    }
+  }
+
+  return undefined;
+}
+
+function selectionAfterDelete(
+  node: RenderNode,
+  nodeId: string,
+): string | undefined {
+  const childIndex = node.children.findIndex((child) => child.id === nodeId);
+
+  if (childIndex !== -1) {
+    return (
+      node.children[childIndex - 1]?.id ??
+      node.children[childIndex + 1]?.id ??
+      node.id
+    );
+  }
+
+  for (const child of node.children) {
+    const found = selectionAfterDelete(child, nodeId);
 
     if (found) {
       return found;

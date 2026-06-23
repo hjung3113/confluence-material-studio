@@ -1,17 +1,26 @@
 import {
   createAppState,
   canEditSelectedText,
+  deleteSelection,
+  duplicateSelection,
   editSelectedText,
   exportCurrentProject,
   getCanvasHtml,
   getExportArtifact,
+  getSelectedEditability,
+  getSelectedEditableTextTargets,
   getSelectedText,
   importFixture,
   importSampleMaterial,
   insertCalloutAfterSelection,
   insertMaterialBlockAfterSelection,
   listSections,
+  moveSelection,
+  redo,
   setPreviewWidth,
+  shouldShowEditableTextTargetList,
+  undo,
+  updateTheme,
   type AppState,
   type PreviewWidth,
 } from "./appModel.js";
@@ -61,6 +70,8 @@ render();
 function render(): void {
   const selectedText = getSelectedText(state);
   const selectedEntry = selectedOverlayEntry();
+  const selectedEditability = getSelectedEditability(state);
+  const editableTextTargets = getSelectedEditableTextTargets(state);
 
   appRoot.innerHTML = `
     <main class="studio-shell" data-testid="visual-editor-shell">
@@ -70,6 +81,8 @@ function render(): void {
           <p>Canvas-first visual editor for Confluence-oriented internal materials.</p>
         </div>
         <div class="topbar-actions">
+          <button data-action="undo" ${state.history.undo.length === 0 ? "disabled" : ""}>Undo</button>
+          <button data-action="redo" ${state.history.redo.length === 0 ? "disabled" : ""}>Redo</button>
           <button data-action="toggle-import">Import</button>
           <button data-action="add-callout">Add callout</button>
           <div class="segmented" aria-label="Preview widths">
@@ -108,7 +121,14 @@ function render(): void {
       <aside class="inspector-panel">
         <h2>Inspector</h2>
         <p class="selected-node">Selected: ${escapeHtml(selectedLabel(selectedEntry))}</p>
+        <div class="editability-status">
+          <span class="editability-badge ${selectedEditability.status}">${escapeHtml(selectedEditability.status)}</span>
+          <p>${escapeHtml(selectedEditability.reason)}</p>
+        </div>
         ${selectedEntry?.editableFields.includes("text") && canEditSelectedText(state) ? textEditor(selectedText) : lockedNotice()}
+        ${shouldShowEditableTextTargetList(state) ? editableTextTargetList(editableTextTargets) : ""}
+        ${documentControls()}
+        ${themeControls()}
         <h2>Compatibility hints</h2>
         <p class="compatibility-hint">${escapeHtml(selectedCompatibility(selectedEntry))}</p>
       </aside>
@@ -123,6 +143,16 @@ function render(): void {
 }
 
 function bindEvents(): void {
+  appRoot.querySelector('[data-action="undo"]')?.addEventListener("click", () => {
+    updateState(undo(state));
+    render();
+  });
+
+  appRoot.querySelector('[data-action="redo"]')?.addEventListener("click", () => {
+    updateState(redo(state));
+    render();
+  });
+
   appRoot.querySelector('[data-action="toggle-import"]')?.addEventListener(
     "click",
     () => {
@@ -208,6 +238,50 @@ function bindEvents(): void {
     },
   );
 
+  appRoot
+    .querySelector('[data-action="duplicate-selection"]')
+    ?.addEventListener("click", () => {
+      updateState(duplicateSelection(state));
+      render();
+    });
+
+  appRoot
+    .querySelector('[data-action="delete-selection"]')
+    ?.addEventListener("click", () => {
+      updateState(deleteSelection(state));
+      render();
+    });
+
+  appRoot.querySelectorAll<HTMLButtonElement>("[data-move-selection]").forEach(
+    (button) => {
+      button.addEventListener("click", () => {
+        updateState(
+          moveSelection(
+            state,
+            button.dataset.moveSelection === "up" ? "up" : "down",
+          ),
+        );
+        render();
+      });
+    },
+  );
+
+  appRoot.querySelectorAll<HTMLButtonElement>("[data-edit-target-id]").forEach(
+    (button) => {
+      button.addEventListener("click", () => {
+        state = { ...state, selectedNodeId: button.dataset.editTargetId };
+        render();
+      });
+    },
+  );
+
+  appRoot.querySelectorAll<HTMLElement>("[data-theme-field]").forEach((field) => {
+    field.addEventListener("change", () => {
+      updateThemeFromControls();
+      render();
+    });
+  });
+
   appRoot.querySelectorAll('[data-action="add-callout"]').forEach((button) => {
     button.addEventListener("click", () => {
       canvasAdapter?.addCallout();
@@ -229,7 +303,10 @@ function bindEvents(): void {
   appRoot.querySelectorAll<HTMLButtonElement>("[data-preview]").forEach(
     (button) => {
       button.addEventListener("click", () => {
-        state = setPreviewWidth(state, button.dataset.preview as PreviewWidth);
+        updateState(
+          setPreviewWidth(state, button.dataset.preview as PreviewWidth),
+          false,
+        );
         render();
       });
     },
@@ -277,6 +354,15 @@ function importDraft(): void {
   exportDrawerOpen = false;
   selectedArtifact = "standalone.html";
   render();
+}
+
+function updateState(nextState: AppState, invalidate = true): void {
+  const previousDoc = state.doc;
+  state = nextState;
+
+  if (invalidate && state.doc !== previousDoc) {
+    invalidateExportResult();
+  }
 }
 
 function previewButton(width: PreviewWidth): string {
@@ -379,9 +465,126 @@ function textEditor(selectedText: string): string {
 function lockedNotice(): string {
   return `
     <div class="locked-notice">
-      Preserved imported structure. This node is not text-editable in the spike.
+      Preserved imported structure. Select an editable child text target or use the document controls that are available for this node.
     </div>
   `;
+}
+
+function editableTextTargetList(
+  targets: ReturnType<typeof getSelectedEditableTextTargets>,
+): string {
+  return `
+    <div class="editable-targets">
+      <h2>Editable text targets</h2>
+      <div class="target-list">
+        ${targets
+          .map(
+            (target) =>
+              `<button data-edit-target-id="${target.nodeId}">${escapeHtml(target.role)}<span>${escapeHtml(target.textPreview)}</span></button>`,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function documentControls(): string {
+  const disabled = state.doc && state.selectedNodeId ? "" : "disabled";
+
+  return `
+    <div class="control-group">
+      <h2>Document controls</h2>
+      <div class="document-actions">
+        <button data-action="duplicate-selection" ${disabled}>Duplicate</button>
+        <button data-action="delete-selection" ${disabled}>Delete</button>
+        <button data-move-selection="up" ${disabled}>Move up</button>
+        <button data-move-selection="down" ${disabled}>Move down</button>
+      </div>
+    </div>
+  `;
+}
+
+function themeControls(): string {
+  const tokens = state.doc?.themeTokens;
+
+  if (!tokens) {
+    return "";
+  }
+
+  return `
+    <div class="control-group theme-controls">
+      <h2>Theme tokens</h2>
+      <label>
+        Background
+        <input type="color" data-theme-field="background" value="${escapeAttribute(tokens.colors.background)}">
+      </label>
+      <label>
+        Text
+        <input type="color" data-theme-field="text" value="${escapeAttribute(tokens.colors.text)}">
+      </label>
+      <label>
+        Accent
+        <input type="color" data-theme-field="accent" value="${escapeAttribute(tokens.colors.accent)}">
+      </label>
+      <label>
+        Font stack
+        <input data-theme-field="fontStack" value="${escapeAttribute(tokens.fontStack)}">
+      </label>
+      <label>
+        Spacing
+        <select data-theme-field="spacingScale">
+          ${themeOption("compact", tokens.spacingScale)}
+          ${themeOption("comfortable", tokens.spacingScale)}
+          ${themeOption("spacious", tokens.spacingScale)}
+        </select>
+      </label>
+      <label>
+        Radius
+        <input data-theme-field="radius" value="${escapeAttribute(tokens.radius)}">
+      </label>
+      <label>
+        Shadow
+        <select data-theme-field="shadow">
+          ${themeOption("none", tokens.shadow)}
+          ${themeOption("soft", tokens.shadow)}
+          ${themeOption("strong", tokens.shadow)}
+        </select>
+      </label>
+    </div>
+  `;
+}
+
+function themeOption(value: string, selected: string): string {
+  return `<option value="${value}" ${value === selected ? "selected" : ""}>${value}</option>`;
+}
+
+function updateThemeFromControls(): void {
+  if (!state.doc) {
+    return;
+  }
+
+  const current = state.doc.themeTokens;
+  const value = (field: string, fallback: string) =>
+    appRoot.querySelector<HTMLInputElement | HTMLSelectElement>(
+      `[data-theme-field="${field}"]`,
+    )?.value ?? fallback;
+
+  updateState(
+    updateTheme(state, {
+      colors: {
+        background: value("background", current.colors.background),
+        text: value("text", current.colors.text),
+        accent: value("accent", current.colors.accent),
+      },
+      fontStack: value("fontStack", current.fontStack),
+      spacingScale: value("spacingScale", current.spacingScale) as
+        | "compact"
+        | "comfortable"
+        | "spacious",
+      radius: value("radius", current.radius),
+      shadow: value("shadow", current.shadow) as "none" | "soft" | "strong",
+    }),
+  );
 }
 
 function importDrawer(): string {
@@ -508,19 +711,18 @@ function syncCanvasAdapter(): void {
       render();
     },
     onSetSelectedText: (text) => {
-      state = editSelectedText(state, text);
-      invalidateExportResult();
+      updateState(editSelectedText(state, text));
     },
     onAddCallout: () => {
-      state = insertCalloutAfterSelection(state, {
-        title: "Review note",
-        body: "Confirm the Confluence fragment before sharing.",
-      });
-      invalidateExportResult();
+      updateState(
+        insertCalloutAfterSelection(state, {
+          title: "Review note",
+          body: "Confirm the Confluence fragment before sharing.",
+        }),
+      );
     },
     onAddMaterialBlock: (blockType) => {
-      state = insertMaterialBlockAfterSelection(state, blockType);
-      invalidateExportResult();
+      updateState(insertMaterialBlockAfterSelection(state, blockType));
     },
   });
 }

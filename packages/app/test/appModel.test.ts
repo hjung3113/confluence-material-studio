@@ -5,10 +5,17 @@ import { describe, expect, it } from "vitest";
 import {
   createAppState,
   canEditSelectedText,
+  deleteSelection,
+  duplicateSelection,
   editSelectedText,
   getCanvasHtml,
   getExportArtifact,
+  getSelectedEditability,
+  getSelectedEditableTextTargets,
   getSelectedText,
+  moveSelection,
+  redo,
+  shouldShowEditableTextTargetList,
   exportCurrentProject,
   importFixture,
   importSampleMaterial,
@@ -16,6 +23,8 @@ import {
   insertCalloutAfterSelection,
   selectNodeByRole,
   setPreviewWidth,
+  undo,
+  updateTheme,
 } from "../src/appModel.js";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
@@ -228,5 +237,172 @@ describe("app model", () => {
     expect(getExportArtifact(exported, "confluence-fragment.html")).toContain(
       "Reviewed launch proposal",
     );
+  });
+
+  it("duplicates, deletes, and moves the selected node through core-backed app helpers", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Operations",
+      content:
+        "<main><section><h1>Title</h1><p>First paragraph.</p><p>Second paragraph.</p></section></main>",
+    });
+    state = selectNodeByRole(state, "paragraph");
+    const originalParagraphId = state.selectedNodeId;
+
+    state = duplicateSelection(state);
+
+    expect(state.selectedNodeId).not.toBe(originalParagraphId);
+    expect(getCanvasHtml(state).match(/First paragraph\./g)).toHaveLength(2);
+
+    state = moveSelection(state, "down");
+
+    expect(state.selectedNodeId).not.toBe(originalParagraphId);
+    expect(getCanvasHtml(state).indexOf("Second paragraph.")).toBeLessThan(
+      getCanvasHtml(state).lastIndexOf("First paragraph."),
+    );
+
+    state = deleteSelection(state);
+
+    expect(state.selectedNodeId).toBeDefined();
+    expect(state.selectedNodeId).not.toBe(originalParagraphId);
+    expect(getCanvasHtml(state).match(/First paragraph\./g)).toHaveLength(1);
+  });
+
+  it("records undo and redo for mutating app model operations and resets history on import", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importSampleMaterial(state);
+    state = editSelectedText(state, "Edited title");
+    expect(state.history.undo).toHaveLength(1);
+    expect(getSelectedText(state)).toBe("Edited title");
+
+    state = undo(state);
+    expect(getSelectedText(state)).toBe("Release Readiness");
+    expect(state.history.redo).toHaveLength(1);
+
+    state = redo(state);
+    expect(getSelectedText(state)).toBe("Edited title");
+    expect(state.history.redo).toHaveLength(0);
+
+    state = insertCalloutAfterSelection(state, {
+      title: "Review note",
+      body: "Confirm fragment output.",
+    });
+    expect(state.history.undo).toHaveLength(2);
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Replacement",
+      content: "<main><section><h1>Replacement</h1></section></main>",
+    });
+
+    expect(state.history).toEqual({ undo: [], redo: [] });
+    expect(getSelectedText(state)).toBe("Replacement");
+  });
+
+  it("records theme token changes in undo and redo history", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importSampleMaterial(state);
+    state = updateTheme(state, {
+      colors: {
+        background: "#101820",
+        text: "#f8fafc",
+        accent: "#f97316",
+      },
+      fontStack: "Inter, sans-serif",
+      spacingScale: "spacious",
+      radius: "12px",
+      shadow: "strong",
+    });
+
+    expect(state.doc?.themeTokens).toMatchObject({
+      colors: {
+        background: "#101820",
+        text: "#f8fafc",
+        accent: "#f97316",
+      },
+      fontStack: "Inter, sans-serif",
+      spacingScale: "spacious",
+      radius: "12px",
+      shadow: "strong",
+    });
+
+    state = undo(state);
+    expect(state.doc?.themeTokens.colors.background).toBe("#ffffff");
+    expect(state.doc?.themeTokens.spacingScale).toBe("comfortable");
+
+    state = redo(state);
+    expect(state.doc?.themeTokens.colors.accent).toBe("#f97316");
+    expect(state.doc?.themeTokens.shadow).toBe("strong");
+  });
+
+  it("exposes selected editability and nested editable text targets to UI callers", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Nested Targets",
+      content: "<main><section><h1>Review note</h1><p>Confirm the Confluence fragment before sharing.</p></section></main>",
+    });
+    state = selectNodeByRole(state, "section");
+
+    expect(getSelectedEditability(state)).toEqual({
+      status: "partially-editable",
+      reason: "Selected node contains editable text targets.",
+    });
+    expect(getSelectedEditableTextTargets(state).map((target) => target.label))
+      .toEqual([
+        "Review note",
+        "Confirm the Confluence fragment before sharing.",
+      ]);
+
+    state = {
+      ...state,
+      selectedNodeId: getSelectedEditableTextTargets(state)[0]?.nodeId,
+    };
+    expect(getSelectedEditability(state).status).toBe("editable");
+    expect(getSelectedText(state)).toBe("Review note");
+  });
+
+  it("shows editable target list for partially-editable selections with one child target only", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Single Target",
+      content: "<main><section><p>Only child target.</p></section></main>",
+    });
+    state = selectNodeByRole(state, "section");
+
+    expect(getSelectedEditableTextTargets(state).map((target) => target.label))
+      .toEqual(["Only child target."]);
+    expect(getSelectedEditability(state).status).toBe("partially-editable");
+    expect(shouldShowEditableTextTargetList(state)).toBe(true);
+
+    state = {
+      ...state,
+      selectedNodeId: getSelectedEditableTextTargets(state)[0]?.nodeId,
+    };
+
+    expect(getSelectedEditability(state).status).toBe("editable");
+    expect(shouldShowEditableTextTargetList(state)).toBe(false);
   });
 });

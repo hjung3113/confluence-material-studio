@@ -13,6 +13,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   border: 1px solid #bac5d4;
   border-radius: 6px;
@@ -44,6 +45,7 @@ button.active {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   padding: 9px 10px;
@@ -160,6 +162,7 @@ h2 {
 
 .section-list,
 .block-palette,
+.document-actions,
 .artifact-tabs {
   display: grid;
   gap: 8px;
@@ -265,6 +268,85 @@ h2 {
   padding: 12px;
   font-size: 13px;
   line-height: 1.45;
+}
+
+.editability-status {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d2dae6;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.editability-status p {
+  color: #617085;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.editability-badge {
+  width: max-content;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.editability-badge.editable {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.editability-badge.partially-editable {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.editability-badge.preserved-only {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.editable-targets,
+.control-group,
+.theme-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.target-list {
+  display: grid;
+  gap: 8px;
+}
+
+.target-list button {
+  display: grid;
+  gap: 3px;
+  min-height: 46px;
+  text-align: left;
+}
+
+.target-list span {
+  overflow: hidden;
+  color: #617085;
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.theme-controls label {
+  display: grid;
+  gap: 6px;
+  color: #536275;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .drawer {
