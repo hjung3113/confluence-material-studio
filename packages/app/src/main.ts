@@ -45,6 +45,7 @@ let canvasAdapter: GrapesCanvasAdapter | undefined;
 let exportResult: ExportResult | undefined;
 let exportLoading = false;
 let exportError: string | undefined;
+let exportVersion = 0;
 
 let state: AppState = importSampleMaterial(
   createAppState({
@@ -536,22 +537,39 @@ async function openExportDrawer(): Promise<void> {
   exportError = undefined;
   exportResult = undefined;
   selectedArtifact = "standalone.html";
+  const requestVersion = exportVersion;
   render();
 
   try {
-    exportResult = await exportCurrentProject(state);
+    const nextExportResult = await exportCurrentProject(state);
+
+    if (requestVersion !== exportVersion) {
+      return;
+    }
+
+    exportResult = nextExportResult;
   } catch (error) {
+    if (requestVersion !== exportVersion) {
+      return;
+    }
+
     exportError =
       error instanceof Error ? error.message : "Unable to export project.";
   } finally {
+    if (requestVersion !== exportVersion) {
+      return;
+    }
+
     exportLoading = false;
     render();
   }
 }
 
 function invalidateExportResult(): void {
+  exportVersion += 1;
   exportResult = undefined;
   exportError = undefined;
+  exportLoading = false;
 }
 
 function getCanvasHtmlForAdapter(): string {

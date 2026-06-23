@@ -1,9 +1,28 @@
 import type { CompatibilityRuleId } from "../compatibility/rules.js";
 
+export interface ConfluenceAdfNodeList
+  extends Array<ConfluenceAdfNode | undefined> {
+  some(
+    predicate: (
+      value: ConfluenceAdfNode,
+      index: number,
+      array: ConfluenceAdfNodeList,
+    ) => unknown,
+    thisArg?: unknown,
+  ): boolean;
+}
+
+export type ConfluenceAdfNode = {
+  type: string;
+  attrs?: object;
+  content?: ConfluenceAdfNodeList;
+  text?: string;
+};
+
 export type ConfluenceAdfDocument = {
   type: "doc";
   version: number;
-  content?: unknown[];
+  content: ConfluenceAdfNodeList;
 };
 
 export type SourceArtifactKind = "html" | "markdown" | "outline" | "template";
