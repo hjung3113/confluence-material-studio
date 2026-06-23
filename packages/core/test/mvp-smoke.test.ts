@@ -88,8 +88,13 @@ describe("MVP core smoke flow", () => {
     const standalone = artifactContent(result, "standalone.html");
 
     expect(standalone).not.toContain("<script");
+    expect(standalone).not.toContain("<iframe");
+    expect(standalone).not.toContain("<object");
+    expect(standalone).not.toContain("<embed");
     expect(standalone).not.toContain("javascript:");
     expect(standalone).not.toContain("https://");
+    expect(standalone).not.toContain("//assets.example.com");
+    expect(standalone).not.toContain("cdn.example.com");
     expect(result.compatibilityReport.warnings.map((warning) => warning.ruleId))
       .toEqual([
         "HTML_REMOTE_RESOURCE",

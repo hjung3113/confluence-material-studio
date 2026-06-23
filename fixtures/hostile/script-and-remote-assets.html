@@ -4,6 +4,17 @@
     <meta charset="utf-8">
     <title>Hostile Import Fixture</title>
     <link rel="stylesheet" href="https://cdn.example.com/deck.css">
+    <style>
+      @IMPORT url(https\3a //cdn.example.com/escaped-import.css);
+      @import 'http\00003a//cdn.example.com/variant-import.css';
+      @import/**/"https://cdn.example.com/comment-string.css";
+      @import /**/ url(/**/"https://cdn.example.com/comment-url.css"/**/);
+      @\69mport "https://cdn.example.com/escaped-keyword.css";
+      .hero {
+        background-image: URL(\68\74\74\70\73\3a//assets.example.com/escaped-bg.png);
+        list-style-image: url(\00006aavascript:window.alert("css"));
+      }
+    </style>
     <script>
       window.evilImportRan = true;
     </script>
@@ -11,7 +22,14 @@
   <body onload="window.trackImport && window.trackImport()">
     <main>
       <h1 onclick="window.alert('clicked')">Hostile Import Fixture</h1>
-      <img src="https://assets.example.com/remote-product-chart.png" alt="Remote product chart">
+      <img
+        src="https://assets.example.com/remote-product-chart.png"
+        srcset="./local-product-chart.png 1x, https://assets.example.com/remote-product-chart-2x.png 2x, //assets.example.com/remote-product-chart-3x.png 3x"
+        alt="Remote product chart"
+      >
+      <iframe src="./local-widget.html"></iframe>
+      <object data="./legacy-object.swf"></object>
+      <embed src="./legacy-widget.swf">
       <a href="javascript:window.alert('unsafe')">Run unsafe action</a>
     </main>
   </body>

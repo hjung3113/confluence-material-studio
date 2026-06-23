@@ -3,6 +3,7 @@ import {
   serialize,
   type DefaultTreeAdapterTypes,
 } from "parse5";
+import type sanitizeHtmlLibrary from "sanitize-html";
 import {
   getCompatibilityRule,
   listCompatibilityRules,
@@ -17,6 +18,7 @@ export type SanitizedHtml = {
 
 const URL_ATTRIBUTE_NAMES = new Set([
   "action",
+  "data",
   "formaction",
   "href",
   "poster",
@@ -25,15 +27,21 @@ const URL_ATTRIBUTE_NAMES = new Set([
   "xlink:href",
 ]);
 const REMOTE_URL_PATTERN = /^(?:https?:)?\/\//i;
-const CSS_REMOTE_URL_FUNCTION_PATTERN =
-  /url\(\s*(?:"(?:https?:)?\/\/[^"]*"|'(?:https?:)?\/\/[^']*'|(?:https?:)?\/\/[^)]*)\s*\)/gi;
+const CSS_COMMENT_PATTERN = /\/\*[\s\S]*?\*\//g;
 const CSS_REMOTE_IMPORT_PATTERN =
-  /@import\s+(?:url\(\s*)?(?:"(?:https?:)?\/\/[^"]*"|'(?:https?:)?\/\/[^']*'|(?:https?:)?\/\/[^;)]*)(?:\s*\))?\s*;?/gi;
+  /@import\s*(?:url\(\s*)?(?:"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|(?:\\.|[^;)])*)(?:\s*\))?\s*;?/gi;
+const CSS_URL_FUNCTION_PATTERN =
+  /url\(\s*(?:"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|(?:\\.|[^)])*)\s*\)/gi;
+const ACTIVE_EMBED_TAG_NAMES = new Set(["embed", "iframe", "object"]);
+type SanitizeHtmlLibrary = typeof sanitizeHtmlLibrary;
 
 export function sanitizeHtml(html: string): SanitizedHtml {
-  const fragment = parseFragment(html);
   const warnings = new Map<CompatibilityRuleId, CompatibilityWarning>();
 
+  const classificationFragment = parseFragment(html);
+  sanitizeChildren(classificationFragment, warnings);
+
+  const fragment = parseFragment(applyStructuralSanitizer(html));
   sanitizeChildren(fragment, warnings);
 
   return {
@@ -47,9 +55,18 @@ function sanitizeChildren(
   warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
 ): void {
   parent.childNodes = parent.childNodes.filter((child) => {
-    if (isElement(child) && child.tagName.toLowerCase() === "script") {
-      addWarning(warnings, "HTML_SCRIPT_REMOVED");
-      return false;
+    if (isElement(child)) {
+      const tagName = child.tagName.toLowerCase();
+
+      if (tagName === "script") {
+        addWarning(warnings, "HTML_SCRIPT_REMOVED");
+        return false;
+      }
+
+      if (ACTIVE_EMBED_TAG_NAMES.has(tagName)) {
+        addWarning(warnings, "HTML_REMOTE_RESOURCE");
+        return false;
+      }
     }
 
     sanitizeNode(child, warnings);
@@ -88,10 +105,20 @@ function sanitizeAttributes(
 
     if (!URL_ATTRIBUTE_NAMES.has(attrName)) {
       if (attrName === "style") {
-        const sanitizedStyle = sanitizeCss(attr.value, warnings);
-        attr.value = sanitizedStyle;
+        attr.value = sanitizeCss(attr.value, warnings);
       }
 
+      return true;
+    }
+
+    if (attrName === "srcset") {
+      const sanitizedSrcset = sanitizeSrcset(attr.value, warnings);
+
+      if (sanitizedSrcset === "") {
+        return false;
+      }
+
+      attr.value = sanitizedSrcset;
       return true;
     }
 
@@ -130,18 +157,173 @@ function sanitizeCss(
   css: string,
   warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
 ): string {
-  let sanitizedCss = css;
+  let sanitizedCss = normalizeCssSyntax(css);
 
-  sanitizedCss = sanitizedCss.replace(CSS_REMOTE_IMPORT_PATTERN, () => {
-    addWarning(warnings, "HTML_REMOTE_RESOURCE");
-    return "";
-  });
-  sanitizedCss = sanitizedCss.replace(CSS_REMOTE_URL_FUNCTION_PATTERN, () => {
-    addWarning(warnings, "HTML_REMOTE_RESOURCE");
-    return "url(\"\")";
-  });
+  sanitizedCss = sanitizedCss.replace(CSS_REMOTE_IMPORT_PATTERN, (match) =>
+    sanitizeCssImport(match, warnings),
+  );
+  sanitizedCss = sanitizedCss.replace(CSS_URL_FUNCTION_PATTERN, (match) =>
+    sanitizeCssUrl(match, warnings),
+  );
 
   return sanitizedCss;
+}
+
+function normalizeCssSyntax(css: string): string {
+  return decodeCssEscapes(css.replace(CSS_COMMENT_PATTERN, " "));
+}
+
+function applyStructuralSanitizer(html: string): string {
+  const sanitize = loadSanitizeHtmlLibrary();
+
+  if (!sanitize) {
+    return html;
+  }
+
+  return sanitize(html, {
+    allowedAttributes: false,
+    allowedTags: false,
+    allowVulnerableTags: true,
+    exclusiveFilter: (frame) =>
+      frame.tag === "script" || ACTIVE_EMBED_TAG_NAMES.has(frame.tag),
+  });
+}
+
+function loadSanitizeHtmlLibrary(): SanitizeHtmlLibrary | undefined {
+  const nodeProcess = globalThis.process as
+    | (NodeJS.Process & {
+        getBuiltinModule?: (specifier: "module") => {
+          createRequire: (url: string) => NodeJS.Require;
+        };
+      })
+    | undefined;
+  const createRequire = nodeProcess?.getBuiltinModule?.("module").createRequire;
+
+  if (!createRequire) {
+    return undefined;
+  }
+
+  const requiredModule = createRequire(import.meta.url)("sanitize-html") as {
+    default?: SanitizeHtmlLibrary;
+  } & SanitizeHtmlLibrary;
+
+  return requiredModule.default ?? requiredModule;
+}
+
+function sanitizeSrcset(
+  srcset: string,
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): string {
+  const candidates = splitSrcsetCandidates(srcset);
+  const safeCandidates = candidates.filter((candidate) => {
+    const url = candidate.trimStart().split(/\s+/, 1)[0] ?? "";
+
+    if (REMOTE_URL_PATTERN.test(url.toLowerCase())) {
+      addWarning(warnings, "HTML_REMOTE_RESOURCE");
+      return false;
+    }
+
+    return true;
+  });
+
+  return safeCandidates.join(", ");
+}
+
+function splitSrcsetCandidates(srcset: string): string[] {
+  const dataUrlPlaceholders: string[] = [];
+  const placeholderPrefix = "__HTMLEDITOR_DATA_URL_";
+  const protectedSrcset = srcset.replace(/data:[^\s,]+,[^\s]+/gi, (match) => {
+    const placeholder = `${placeholderPrefix}${dataUrlPlaceholders.length}__`;
+    dataUrlPlaceholders.push(match);
+    return placeholder;
+  });
+
+  return protectedSrcset
+    .split(",")
+    .map((candidate) =>
+      candidate
+        .trim()
+        .replace(
+          new RegExp(`${placeholderPrefix}(\\d+)__`, "g"),
+          (_match, index: string) => dataUrlPlaceholders[Number(index)] ?? "",
+        ),
+    )
+    .filter((candidate) => candidate !== "");
+}
+
+function containsRemoteUrl(css: string): boolean {
+  return /(?:https?:)?\/\//i.test(css.replace(/\s+/g, ""));
+}
+
+function containsJavascriptUrl(css: string): boolean {
+  return css.replace(/\s+/g, "").toLowerCase().includes("javascript:");
+}
+
+function sanitizeCssImport(
+  cssImport: string,
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): string {
+  if (containsJavascriptUrl(cssImport)) {
+    return removeCssJavascriptUrl(warnings);
+  }
+
+  if (containsRemoteUrl(cssImport)) {
+    return removeCssImport(warnings);
+  }
+
+  return cssImport;
+}
+
+function sanitizeCssUrl(
+  cssUrl: string,
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): string {
+  if (containsJavascriptUrl(cssUrl)) {
+    return removeCssJavascriptUrl(warnings);
+  }
+
+  if (containsRemoteUrl(cssUrl)) {
+    return removeCssUrl(warnings);
+  }
+
+  return cssUrl;
+}
+
+function removeCssImport(
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): string {
+  addWarning(warnings, "HTML_REMOTE_RESOURCE");
+  return "";
+}
+
+function removeCssUrl(
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): string {
+  addWarning(warnings, "HTML_REMOTE_RESOURCE");
+  return 'url("")';
+}
+
+function removeCssJavascriptUrl(
+  warnings: Map<CompatibilityRuleId, CompatibilityWarning>,
+): string {
+  addWarning(warnings, "HTML_JAVASCRIPT_URL");
+  return 'url("")';
+}
+
+function decodeCssEscapes(value: string): string {
+  return value.replace(
+    /\\([0-9a-f]{1,6}\s?|.)/gi,
+    (_match, escapeSequence: string) => {
+      const hexMatch = /^([0-9a-f]{1,6})\s?$/i.exec(escapeSequence);
+
+      if (!hexMatch) {
+        return escapeSequence;
+      }
+
+      const codePoint = Number.parseInt(hexMatch[1] ?? "", 16);
+      return Number.isNaN(codePoint) ? "" : String.fromCodePoint(codePoint);
+    },
+  );
 }
 
 function addWarning(
