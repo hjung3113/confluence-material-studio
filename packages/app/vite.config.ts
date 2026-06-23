@@ -40,5 +40,6 @@ export default defineConfig({
   plugins: [stripGrapesJsRemoteDefaults()],
   build: {
     target: "es2022",
+    manifest: true,
   },
 });

@@ -32,10 +32,7 @@ import type {
   RenderNode,
   SemanticOverlayEntry,
 } from "@htmleditor/core/browser";
-import {
-  createGrapesCanvasAdapter,
-  type GrapesCanvasAdapter,
-} from "./editor/grapesAdapter.js";
+import type { GrapesCanvasAdapter } from "./editor/grapesAdapter.js";
 import { allowedBlockLabels } from "./editor/blockPalette.js";
 import "./styles.css";
 
@@ -53,6 +50,12 @@ let draftContent =
   "<main><section><h1>Imported roadmap</h1><p>Replace this copy from the visual editor.</p></section></main>";
 let selectedArtifact = "standalone.html";
 let canvasAdapter: GrapesCanvasAdapter | undefined;
+let canvasAdapterModulePromise:
+  | Promise<typeof import("./editor/grapesAdapter.js")>
+  | undefined;
+let canvasAdapterRequestId = 0;
+let canvasLoadStatus: "idle" | "loading" | "ready" | "error" = "idle";
+let canvasLoadError: string | undefined;
 let exportResult: ExportResult | undefined;
 let exportLoading = false;
 let exportError: string | undefined;
@@ -113,9 +116,10 @@ function render(): void {
             <h2>Visual canvas</h2>
             <p>${escapeHtml(state.doc?.title ?? "No document")}</p>
           </div>
-          <p class="canvas-state">Click text or sections to select. Export remains core-backed.</p>
+          <p class="canvas-state">${escapeHtml(canvasStatusText())}</p>
         </div>
         <div class="canvas-frame canvas-${state.previewWidth}">
+          ${canvasLoadStatus === "error" ? canvasErrorNotice() : ""}
           <div class="canvas-surface" data-editor-host aria-label="Visual canvas"></div>
         </div>
       </section>
@@ -236,7 +240,7 @@ function bindEvents(): void {
     () => {
       const field =
         appRoot.querySelector<HTMLTextAreaElement>('[data-action="text"]');
-      canvasAdapter?.setSelectedText(field?.value ?? "");
+      updateState(editSelectedText(state, field?.value ?? ""));
       render();
     },
   );
@@ -287,7 +291,7 @@ function bindEvents(): void {
 
   appRoot.querySelectorAll('[data-action="add-callout"]').forEach((button) => {
     button.addEventListener("click", () => {
-      canvasAdapter?.addCallout();
+      insertReviewCalloutAfterSelection();
       render();
     });
   });
@@ -295,9 +299,7 @@ function bindEvents(): void {
   appRoot.querySelectorAll<HTMLButtonElement>("[data-block-type]").forEach(
     (button) => {
       button.addEventListener("click", () => {
-        canvasAdapter?.addMaterialBlock(
-          button.dataset.blockType as MaterialBlockType,
-        );
+        insertBlockAfterSelection(button.dataset.blockType as MaterialBlockType);
         render();
       });
     },
@@ -366,6 +368,19 @@ function updateState(nextState: AppState, invalidate = true): void {
   if (invalidate && state.doc !== previousDoc) {
     invalidateExportResult();
   }
+}
+
+function insertReviewCalloutAfterSelection(): void {
+  updateState(
+    insertCalloutAfterSelection(state, {
+      title: "Review note",
+      body: "Confirm the Confluence fragment before sharing.",
+    }),
+  );
+}
+
+function insertBlockAfterSelection(blockType: MaterialBlockType): void {
+  updateState(insertMaterialBlockAfterSelection(state, blockType));
 }
 
 function previewButton(width: PreviewWidth): string {
@@ -737,43 +752,97 @@ function nodeText(nodeId: string): string {
 }
 
 function syncCanvasAdapter(): void {
+  canvasAdapterRequestId += 1;
+  const requestId = canvasAdapterRequestId;
+
   canvasAdapter?.destroy();
   canvasAdapter = undefined;
+
+  if (canvasLoadStatus === "error") {
+    return;
+  }
+
+  canvasLoadStatus = "loading";
+  canvasLoadError = undefined;
 
   const host = appRoot.querySelector<HTMLElement>("[data-editor-host]");
 
   if (!host || !state.doc) {
+    canvasLoadStatus = "idle";
     return;
   }
 
-  canvasAdapter = createGrapesCanvasAdapter({
-    host,
-    safeHtml: getCanvasHtmlForAdapter(),
-    selectedNodeId: state.selectedNodeId,
-    previewWidth: state.previewWidth,
-    onSelectionChange: (nodeId) => {
-      if (nodeId === state.selectedNodeId) {
+  void loadGrapesCanvasAdapterModule()
+    .then(({ createGrapesCanvasAdapter }) => {
+      if (requestId !== canvasAdapterRequestId || !host.isConnected) {
         return;
       }
 
-      state = { ...state, selectedNodeId: nodeId };
+      const adapter = createGrapesCanvasAdapter({
+        host,
+        safeHtml: getCanvasHtmlForAdapter(),
+        selectedNodeId: state.selectedNodeId,
+        previewWidth: state.previewWidth,
+        onSelectionChange: (nodeId) => {
+          if (requestId !== canvasAdapterRequestId) {
+            return;
+          }
+
+          if (nodeId === state.selectedNodeId) {
+            return;
+          }
+
+          state = { ...state, selectedNodeId: nodeId };
+          render();
+        },
+        onSetSelectedText: (text) => {
+          if (requestId !== canvasAdapterRequestId) {
+            return;
+          }
+
+          updateState(editSelectedText(state, text));
+        },
+        onAddCallout: () => {
+          if (requestId !== canvasAdapterRequestId) {
+            return;
+          }
+
+          insertReviewCalloutAfterSelection();
+        },
+        onAddMaterialBlock: (blockType) => {
+          if (requestId !== canvasAdapterRequestId) {
+            return;
+          }
+
+          insertBlockAfterSelection(blockType);
+        },
+      });
+
+      if (requestId !== canvasAdapterRequestId || !host.isConnected) {
+        adapter.destroy();
+        return;
+      }
+
+      canvasAdapter = adapter;
+      canvasLoadStatus = "ready";
+    })
+    .catch((error: unknown) => {
+      if (requestId !== canvasAdapterRequestId) {
+        return;
+      }
+
+      canvasLoadStatus = "error";
+      canvasLoadError =
+        error instanceof Error ? error.message : "Unable to load visual canvas.";
       render();
-    },
-    onSetSelectedText: (text) => {
-      updateState(editSelectedText(state, text));
-    },
-    onAddCallout: () => {
-      updateState(
-        insertCalloutAfterSelection(state, {
-          title: "Review note",
-          body: "Confirm the Confluence fragment before sharing.",
-        }),
-      );
-    },
-    onAddMaterialBlock: (blockType) => {
-      updateState(insertMaterialBlockAfterSelection(state, blockType));
-    },
-  });
+    });
+}
+
+function loadGrapesCanvasAdapterModule(): Promise<
+  typeof import("./editor/grapesAdapter.js")
+> {
+  canvasAdapterModulePromise ??= import("./editor/grapesAdapter.js");
+  return canvasAdapterModulePromise;
 }
 
 async function openExportDrawer(): Promise<void> {
@@ -826,6 +895,27 @@ function invalidateExportResult(): void {
 
 function getCanvasHtmlForAdapter(): string {
   return state.doc ? getCanvasHtml(state) : "";
+}
+
+function canvasStatusText(): string {
+  if (canvasLoadStatus === "error") {
+    return "Visual canvas failed to load. Document controls remain available.";
+  }
+
+  if (canvasLoadStatus === "ready") {
+    return "Click text or sections to select. Export remains core-backed.";
+  }
+
+  return "Loading visual canvas. Document controls remain available.";
+}
+
+function canvasErrorNotice(): string {
+  return `
+    <div class="canvas-error" role="alert" style="margin: 16px; padding: 16px; border: 1px solid #b91c1c; background: #fef2f2; color: #7f1d1d;">
+      Visual canvas could not load. Use the outline, inspector, and block controls to continue editing.
+      <span>${escapeHtml(canvasLoadError ?? "Unable to load visual canvas.")}</span>
+    </div>
+  `;
 }
 
 function compactText(node: RenderNode): string {

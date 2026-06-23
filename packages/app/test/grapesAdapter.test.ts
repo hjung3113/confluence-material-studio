@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   createGrapesCanvasAdapter,
@@ -69,5 +71,42 @@ describe("GrapesJS canvas adapter boundary", () => {
 
     expect(adapterKeys).not.toContain("editor" as keyof GrapesCanvasAdapter);
     expect(createGrapesCanvasAdapter).toBeTypeOf("function");
+  });
+
+  it("keeps the app entrypoint behind a lazy adapter import", () => {
+    const mainSource = readFileSync(
+      fileURLToPath(new URL("../src/main.ts", import.meta.url)),
+      "utf8",
+    );
+
+    expect(mainSource).toContain('import("./editor/grapesAdapter.js")');
+    expect(mainSource).toContain(
+      'import type { GrapesCanvasAdapter } from "./editor/grapesAdapter.js";',
+    );
+    expect(mainSource).not.toContain("createGrapesCanvasAdapter,\n  type");
+  });
+
+  it("routes add controls through the core app model before the lazy canvas is ready", () => {
+    const mainSource = readFileSync(
+      fileURLToPath(new URL("../src/main.ts", import.meta.url)),
+      "utf8",
+    );
+
+    expect(mainSource).not.toContain("canvasAdapter?.addCallout()");
+    expect(mainSource).not.toContain("canvasAdapter?.addMaterialBlock");
+    expect(mainSource).toContain("insertReviewCalloutAfterSelection()");
+    expect(mainSource).toContain("insertBlockAfterSelection(");
+  });
+
+  it("handles lazy canvas load failures with visible state and no unhandled rejection", () => {
+    const mainSource = readFileSync(
+      fileURLToPath(new URL("../src/main.ts", import.meta.url)),
+      "utf8",
+    );
+
+    expect(mainSource).toContain("canvasLoadStatus");
+    expect(mainSource).toContain("canvasLoadError");
+    expect(mainSource).toContain(".catch((error: unknown)");
+    expect(mainSource).toContain('class="canvas-error"');
   });
 });

@@ -1,4 +1,5 @@
 import { readFileSync, statSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { join, resolve } from "node:path";
 
 const repoRoot = resolve(process.cwd(), "../..");
@@ -27,17 +28,16 @@ const requiredBundleText = [
   "native-mapping-report.json",
   "data-core-node-id",
   "data-editor-host",
-  "cms:add-callout",
   "Review note",
 ];
+
+const requiredLazyBundleText = ["cms:add-callout"];
 
 const forbiddenBundleText = [
   "@atlaskit/adf-schema",
   "prosemirror",
   "nodeFromJSON",
   "confluenceAdfDraft",
-  "https://app.grapesjs.com",
-  "https://cdnjs.cloudflare.com",
   "Ecommerce",
   "Script widget",
   "Remote asset widget",
@@ -45,29 +45,78 @@ const forbiddenBundleText = [
   "Publish to Confluence",
 ];
 
+const forbiddenRemoteText = [
+  "https://app.grapesjs.com",
+  "https://cdnjs.cloudflare.com",
+];
+
+const grapesRuntimeMarkers = [
+  "grapesjs",
+  "gjs-",
+  "DomComponents",
+  "BlockManager",
+  "TraitManager",
+];
+
+const initialJsGzipBudgetBytes = 150_000;
+
+type ViteManifestChunk = {
+  file?: string;
+  src?: string;
+  isEntry?: boolean;
+  imports?: string[];
+  dynamicImports?: string[];
+};
+
+type ViteManifest = Record<string, ViteManifestChunk>;
+
 async function main(): Promise<void> {
   assertCoreSubpathsResolveViaPackageExports();
   await assertCorePackageExportsResolveAndImport();
   assertBuiltApp();
 
   const indexHtml = readFileSync(join(appDist, "index.html"), "utf8");
-  const scriptPath = scriptPathFromIndex(indexHtml);
-  const bundle = readFileSync(
-    resolve(appDist, scriptPath.replace(/^\//, "")),
-    "utf8",
-  );
+  const manifest = readManifest();
+  const initialScriptPaths = initialJsPathsFromManifest(manifest);
+  const lazyScriptPaths = lazyJsPathsFromManifest(manifest);
+  const allScriptPaths = allJsPathsFromManifest(manifest);
+  const initialBundle = readJoinedAssets(initialScriptPaths);
+  const lazyBundle = readJoinedAssets(lazyScriptPaths);
+  const allBundle = readJoinedAssets(allScriptPaths);
 
   for (const text of requiredShellText) {
     assertContains(indexHtml, text, "index.html");
   }
 
   for (const text of requiredBundleText) {
-    assertContains(bundle, text, scriptPath);
+    assertContains(initialBundle, text, "initial JS graph");
+  }
+
+  for (const text of requiredLazyBundleText) {
+    assertContains(lazyBundle, text, "lazy JS graph");
   }
 
   for (const text of forbiddenBundleText) {
-    assertNotContains(bundle, text, scriptPath);
+    assertNotContains(initialBundle, text, "initial JS graph");
   }
+
+  for (const text of forbiddenRemoteText) {
+    assertNotContains(allBundle, text, "built JS graph");
+  }
+
+  const initialGzipBytes = gzipSync(initialBundle).length;
+
+  if (initialGzipBytes > initialJsGzipBudgetBytes) {
+    throw new Error(
+      `Initial JS graph gzip size ${initialGzipBytes} exceeds budget ${initialJsGzipBudgetBytes}.`,
+    );
+  }
+
+  for (const marker of grapesRuntimeMarkers) {
+    assertNotContains(initialBundle, marker, "initial JS graph");
+  }
+
+  assertContainsAny(lazyBundle, grapesRuntimeMarkers, "lazy JS graph");
 
   console.log(
     "APP_SMOKE_PASS built app artifacts and canvas-first editor markers verified",
@@ -147,14 +196,108 @@ function assertBuiltApp(): void {
   }
 }
 
-function scriptPathFromIndex(indexHtml: string): string {
-  const match = indexHtml.match(/<script[^>]+src="([^"]+)"/);
+function readManifest(): ViteManifest {
+  return JSON.parse(
+    readFileSync(join(appDist, ".vite/manifest.json"), "utf8"),
+  ) as ViteManifest;
+}
 
-  if (!match?.[1]) {
-    throw new Error("Built index.html does not include a script tag.");
+function initialJsPathsFromManifest(manifest: ViteManifest): string[] {
+  const entryKey = entryChunkKey(manifest);
+  const visited = new Set<string>();
+
+  function visit(chunkKey: string): void {
+    if (visited.has(chunkKey)) {
+      return;
+    }
+
+    visited.add(chunkKey);
+
+    for (const importedChunkKey of manifest[chunkKey]?.imports ?? []) {
+      visit(importedChunkKey);
+    }
   }
 
-  return match[1];
+  visit(entryKey);
+
+  return jsFilesForChunkKeys(manifest, [...visited]);
+}
+
+function lazyJsPathsFromManifest(manifest: ViteManifest): string[] {
+  const entryKey = entryChunkKey(manifest);
+  const initialChunkKeys = new Set(
+    initialJsPathsFromManifest(manifest)
+      .map((file) => chunkKeyForFile(manifest, file))
+      .filter((chunkKey): chunkKey is string => Boolean(chunkKey)),
+  );
+  const visited = new Set<string>();
+
+  function visit(chunkKey: string): void {
+    if (visited.has(chunkKey) || initialChunkKeys.has(chunkKey)) {
+      return;
+    }
+
+    visited.add(chunkKey);
+
+    for (const importedChunkKey of manifest[chunkKey]?.imports ?? []) {
+      visit(importedChunkKey);
+    }
+
+    for (const dynamicChunkKey of manifest[chunkKey]?.dynamicImports ?? []) {
+      visit(dynamicChunkKey);
+    }
+  }
+
+  for (const dynamicChunkKey of manifest[entryKey]?.dynamicImports ?? []) {
+    visit(dynamicChunkKey);
+  }
+
+  return jsFilesForChunkKeys(manifest, [...visited]);
+}
+
+function allJsPathsFromManifest(manifest: ViteManifest): string[] {
+  return [...new Set(jsFilesForChunkKeys(manifest, Object.keys(manifest)))].sort();
+}
+
+function entryChunkKey(manifest: ViteManifest): string {
+  const entry = Object.entries(manifest).find(
+    ([, chunk]) => chunk.isEntry === true,
+  );
+
+  if (!entry) {
+    throw new Error("Vite manifest does not include an entry chunk.");
+  }
+
+  return entry[0];
+}
+
+function jsFilesForChunkKeys(
+  manifest: ViteManifest,
+  chunkKeys: string[],
+): string[] {
+  return chunkKeys
+    .map((chunkKey) => manifest[chunkKey]?.file)
+    .filter((file): file is string => Boolean(file?.endsWith(".js")))
+    .sort();
+}
+
+function chunkKeyForFile(
+  manifest: ViteManifest,
+  file: string,
+): string | undefined {
+  return Object.entries(manifest).find(
+    ([, chunk]) => chunk.file === file,
+  )?.[0];
+}
+
+function readJoinedAssets(assetPaths: string[]): string {
+  if (assetPaths.length === 0) {
+    return "";
+  }
+
+  return assetPaths
+    .map((assetPath) => readFileSync(resolve(appDist, assetPath), "utf8"))
+    .join("\n");
 }
 
 function assertContains(content: string, text: string, source: string): void {
@@ -166,6 +309,18 @@ function assertContains(content: string, text: string, source: string): void {
 function assertNotContains(content: string, text: string, source: string): void {
   if (content.includes(text)) {
     throw new Error(`${source} contains forbidden marker: ${text}`);
+  }
+}
+
+function assertContainsAny(
+  content: string,
+  texts: readonly string[],
+  source: string,
+): void {
+  if (!texts.some((text) => content.includes(text))) {
+    throw new Error(
+      `${source} does not contain any required marker: ${texts.join(", ")}`,
+    );
   }
 }
 
