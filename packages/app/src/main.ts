@@ -570,6 +570,7 @@ function invalidateExportResult(): void {
   exportResult = undefined;
   exportError = undefined;
   exportLoading = false;
+  exportDrawerOpen = false;
 }
 
 function getCanvasHtmlForAdapter(): string {
