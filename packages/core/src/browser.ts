@@ -1,11 +1,27 @@
 export const CORE_PACKAGE_NAME = "@htmleditor/core";
 
 export {
+  deleteNode,
+  duplicateNode,
   editNodeText,
+  getNodeEditability,
   insertCalloutAfterNode,
   insertMaterialBlockAfterNode,
+  listEditableTextTargets,
+  moveNode,
+  updateThemeTokens,
 } from "./document/editOperations.js";
-export type { MaterialBlockType } from "./document/editOperations.js";
+export type {
+  DeleteNodeInput,
+  DuplicateNodeInput,
+  EditableTextTarget,
+  MaterialBlockType,
+  MoveNodeInput,
+  NodeEditability,
+  NodeEditabilityStatus,
+  ThemeTokenPatch,
+  UpdateThemeTokensInput,
+} from "./document/editOperations.js";
 export { renderTreeToHtml } from "./document/renderTreeHtml.js";
 export { importHtml } from "./import/htmlImport.js";
 export { importMarkdown } from "./import/markdownImport.js";

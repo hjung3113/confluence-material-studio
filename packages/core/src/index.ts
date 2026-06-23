@@ -11,11 +11,27 @@ export type { ConfluenceAdfDraft } from "./export/confluenceAdfDraft.js";
 export { exportProject } from "./export/exportProject.js";
 export { exportStandaloneHtml } from "./export/standaloneHtml.js";
 export {
+  deleteNode,
+  duplicateNode,
   editNodeText,
+  getNodeEditability,
   insertCalloutAfterNode,
   insertMaterialBlockAfterNode,
+  listEditableTextTargets,
+  moveNode,
+  updateThemeTokens,
 } from "./document/editOperations.js";
-export type { MaterialBlockType } from "./document/editOperations.js";
+export type {
+  DeleteNodeInput,
+  DuplicateNodeInput,
+  EditableTextTarget,
+  MaterialBlockType,
+  MoveNodeInput,
+  NodeEditability,
+  NodeEditabilityStatus,
+  ThemeTokenPatch,
+  UpdateThemeTokensInput,
+} from "./document/editOperations.js";
 export { renderTreeToHtml } from "./document/renderTreeHtml.js";
 export { importHtml } from "./import/htmlImport.js";
 export { importMarkdown } from "./import/markdownImport.js";
