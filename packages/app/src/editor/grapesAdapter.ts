@@ -85,6 +85,8 @@ export function buildGrapesEditorConfig(
     components: safeHtml,
     height: "100%",
     width: "100%",
+    telemetry: false,
+    cssIcons: "",
     storageManager: false,
     noticeOnUnload: false,
     showDevices: false,

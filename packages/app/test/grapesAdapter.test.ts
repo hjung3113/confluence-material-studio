@@ -48,10 +48,12 @@ describe("GrapesJS canvas adapter boundary", () => {
     );
 
     expect(config.components).toContain('data-core-node-id="node-1"');
+    expect(config.telemetry).toBe(false);
+    expect(config.cssIcons).toBe("");
     expect(config.storageManager).toBe(false);
+    expect(config.canvas).toMatchObject({ scripts: [], styles: [] });
     expect(config.panels).toEqual({ defaults: [] });
     expect(config.blockManager).toEqual({ blocks: [] });
-    expect(config.canvas).toMatchObject({ scripts: [], styles: [] });
   });
 
   it("keeps the raw GrapesJS editor object behind the adapter API", () => {
