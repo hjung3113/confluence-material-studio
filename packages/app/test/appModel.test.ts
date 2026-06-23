@@ -13,6 +13,7 @@ import {
   getImportReviewSummary,
   getSelectedEditability,
   getSelectedEditableTextTargets,
+  getSelectedStructureMutability,
   getSelectedText,
   formatCompatibilityWarningDetail,
   moveSelection,
@@ -584,4 +585,57 @@ describe("app model", () => {
     expect(getSelectedEditability(state).status).toBe("editable");
     expect(shouldShowEditableTextTargetList(state)).toBe(false);
   });
+
+  it("exposes disabled structure controls for preserved-only imported nodes", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Preserved",
+      content:
+        "<main><section><style>.hero { color: red; }</style><h1>Editable</h1></section></main>",
+    });
+
+    const styleNodeId = findNodeIdByTag(state.doc?.renderTree, "style");
+    state = { ...state, selectedNodeId: styleNodeId };
+
+    expect(getSelectedEditability(state).status).toBe("preserved-only");
+    expect(getSelectedStructureMutability(state)).toEqual({
+      canMutate: false,
+      reason:
+        "Preserved imported structure cannot be duplicated, deleted, or moved in MVP.",
+    });
+    expect(duplicateSelection(state)).toBe(state);
+    expect(deleteSelection(state)).toBe(state);
+    expect(moveSelection(state, "down")).toBe(state);
+  });
 });
+
+function findNodeIdByTag(
+  node: { id: string; tag: string; children: unknown[] } | undefined,
+  tag: string,
+): string | undefined {
+  if (!node) {
+    return undefined;
+  }
+
+  if (node.tag === tag) {
+    return node.id;
+  }
+
+  for (const child of node.children) {
+    const found = findNodeIdByTag(
+      child as { id: string; tag: string; children: unknown[] },
+      tag,
+    );
+
+    if (found) {
+      return found;
+    }
+  }
+
+  return undefined;
+}

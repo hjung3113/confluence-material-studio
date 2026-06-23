@@ -5,6 +5,7 @@ export {
   duplicateNode,
   editNodeText,
   getNodeEditability,
+  getNodeStructureMutability,
   insertCalloutAfterNode,
   insertMaterialBlockAfterNode,
   listEditableTextTargets,
@@ -19,6 +20,7 @@ export type {
   MoveNodeInput,
   NodeEditability,
   NodeEditabilityStatus,
+  NodeStructureMutability,
   ThemeTokenPatch,
   UpdateThemeTokensInput,
 } from "./document/editOperations.js";

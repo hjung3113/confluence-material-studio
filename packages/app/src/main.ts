@@ -10,6 +10,7 @@ import {
   getExportArtifact,
   getImportReviewSummary,
   getSelectedEditability,
+  getSelectedStructureMutability,
   getSelectedEditableTextTargets,
   getSelectedText,
   importFixture,
@@ -483,7 +484,7 @@ function textEditor(selectedText: string): string {
 function lockedNotice(): string {
   return `
     <div class="locked-notice">
-      Preserved imported structure. Select an editable child text target or use the document controls that are available for this node.
+      Preserved imported structure. Select an editable child text target; structure controls are disabled when the selected node must be preserved.
     </div>
   `;
 }
@@ -507,11 +508,13 @@ function editableTextTargetList(
 }
 
 function documentControls(): string {
-  const disabled = state.doc && state.selectedNodeId ? "" : "disabled";
+  const mutability = getSelectedStructureMutability(state);
+  const disabled = mutability.canMutate ? "" : "disabled";
 
   return `
     <div class="control-group">
       <h2>Document controls</h2>
+      <p class="control-hint">${escapeHtml(mutability.reason)}</p>
       <div class="document-actions">
         <button data-action="duplicate-selection" ${disabled}>Duplicate</button>
         <button data-action="delete-selection" ${disabled}>Delete</button>

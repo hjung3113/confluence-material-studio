@@ -15,6 +15,7 @@ export {
   duplicateNode,
   editNodeText,
   getNodeEditability,
+  getNodeStructureMutability,
   insertCalloutAfterNode,
   insertMaterialBlockAfterNode,
   listEditableTextTargets,
@@ -29,11 +30,12 @@ export type {
   MoveNodeInput,
   NodeEditability,
   NodeEditabilityStatus,
+  NodeStructureMutability,
   ThemeTokenPatch,
   UpdateThemeTokensInput,
 } from "./document/editOperations.js";
 export { renderTreeToHtml } from "./document/renderTreeHtml.js";
-export { importHtml } from "./import/htmlImport.js";
+export { importHtml } from "./import/htmlImportNode.js";
 export { importMarkdown } from "./import/markdownImport.js";
 export { sanitizeHtml } from "./sanitize/sanitizeHtml.js";
 export type {

@@ -3,6 +3,7 @@ import {
   duplicateNode,
   editNodeText,
   getNodeEditability,
+  getNodeStructureMutability,
   importHtml,
   importMarkdown,
   insertCalloutAfterNode,
@@ -17,6 +18,7 @@ import {
   type ExportTarget,
   type MaterialBlockType,
   type NodeEditability,
+  type NodeStructureMutability,
   type ProjectDoc,
   type RenderNode,
   type SemanticRole,
@@ -331,6 +333,19 @@ export function getSelectedEditability(state: AppState): NodeEditability {
   }
 
   return getNodeEditability(state.doc, state.selectedNodeId);
+}
+
+export function getSelectedStructureMutability(
+  state: AppState,
+): NodeStructureMutability {
+  if (!state.doc || !state.selectedNodeId) {
+    return {
+      canMutate: false,
+      reason: "Select a canvas element before using document controls.",
+    };
+  }
+
+  return getNodeStructureMutability(state.doc, state.selectedNodeId);
 }
 
 export function getSelectedEditableTextTargets(

@@ -43,6 +43,8 @@ const forbiddenBundleText = [
   "Remote asset widget",
   "GrapesJS default blocks",
   "Publish to Confluence",
+  "sanitize-html",
+  "createRequire",
 ];
 
 const forbiddenRemoteText = [

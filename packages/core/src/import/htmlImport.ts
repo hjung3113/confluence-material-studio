@@ -13,12 +13,19 @@ import type {
   ThemeTokens,
   TransformationTraceEntry,
 } from "../document/types.js";
-import { sanitizeHtml } from "../sanitize/sanitizeHtml.js";
+import {
+  sanitizeHtml,
+  type SanitizedHtml,
+} from "../sanitize/sanitizeHtmlBrowser.js";
 
 export type ImportHtmlInput = {
   html: string;
   title: string;
   now: string;
+};
+
+export type ImportHtmlOptions = {
+  sanitize?: (html: string) => SanitizedHtml;
 };
 
 const DEFAULT_THEME_TOKENS: ThemeTokens = {
@@ -33,8 +40,11 @@ const DEFAULT_THEME_TOKENS: ThemeTokens = {
   shadow: "soft",
 };
 
-export function importHtml(input: ImportHtmlInput): ProjectDoc {
-  const sanitized = sanitizeHtml(input.html);
+export function importHtml(
+  input: ImportHtmlInput,
+  options: ImportHtmlOptions = {},
+): ProjectDoc {
+  const sanitized = (options.sanitize ?? sanitizeHtml)(input.html);
   const fragment = parseFragment(sanitized.html);
   const sequence = { value: 0 };
   const renderTree = renderNodeFromParent(fragment, "document", sequence);

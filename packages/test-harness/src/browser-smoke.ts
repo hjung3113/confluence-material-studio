@@ -40,6 +40,17 @@ async function main(): Promise<void> {
 
 async function runSmoke(page: Page, url: string): Promise<void> {
   const consoleErrors: string[] = [];
+  const requestedUrls: string[] = [];
+  const scriptUrls: string[] = [];
+
+  page.on("request", (request) => {
+    requestedUrls.push(request.url());
+
+    if (request.resourceType() === "script") {
+      scriptUrls.push(request.url());
+    }
+  });
+
   page.on("console", (message) => {
     if (message.type() === "error") {
       consoleErrors.push(message.text());
@@ -48,17 +59,31 @@ async function runSmoke(page: Page, url: string): Promise<void> {
 
   await page.goto(url, { waitUntil: "networkidle" });
   await expectText(page, "Release Readiness");
+  await expectAnyText(page, [
+    "Loading visual canvas. Document controls remain available.",
+    "Click text or sections to select. Export remains core-backed.",
+  ]);
+  assertNoExternalRequests(requestedUrls);
   await expectTextAbsent(page, "Ecommerce");
   await expectTextAbsent(page, "Script widget");
   await expectTextAbsent(page, "Remote asset widget");
   await expectTextAbsent(page, "Publish to Confluence");
+  await expectText(page, "Import review");
 
   const frame = page.frameLocator("iframe").first();
   await frame.getByRole("heading", { name: "Release Readiness" }).click();
   await expectText(page, "Selected: title");
+  await expectText(page, "editable");
+  await expectText(page, "Selected node has editable text.");
   await page.locator('[data-action="text"]').fill("Browser Smoke Release");
   await page.getByRole("button", { name: "Apply text" }).click();
   await expectText(page, "Browser Smoke Release");
+  await expectCanvasTextCount(page, "Browser Smoke Release", 1);
+
+  await page.getByRole("button", { name: "Duplicate" }).click();
+  await expectCanvasTextCount(page, "Browser Smoke Release", 2);
+  await page.getByRole("button", { name: "Delete" }).click();
+  await expectCanvasTextCount(page, "Browser Smoke Release", 1);
 
   await page.getByRole("button", { name: "Add callout" }).click();
   await expectText(page, "Review note");
@@ -66,12 +91,28 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   await expectText(page, "New title");
   await page.locator(".block-palette button", { hasText: "Paragraph" }).click();
   await expectText(page, "New paragraph");
+  await expectCanvasTextOrder(page, ["New title", "New paragraph"]);
+  await page.getByRole("button", { name: "Move up" }).click();
+  await expectCanvasTextOrder(page, ["New paragraph", "New title"]);
+  await page.getByRole("button", { name: "Move down" }).click();
+  await expectCanvasTextOrder(page, ["New title", "New paragraph"]);
   await page.locator(".block-palette button", { hasText: "Divider" }).click();
   assertEqual(
     await frame.locator("hr").count(),
     1,
     "Divider block should render as a horizontal rule.",
   );
+
+  await page.locator('[data-theme-field="accent"]').evaluate((element) => {
+    const input = element as HTMLInputElement;
+    input.value = "#f97316";
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await expectControlValue(page, '[data-theme-field="accent"]', "#f97316");
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expectControlValue(page, '[data-theme-field="accent"]', "#2563eb");
+  await page.getByRole("button", { name: "Redo" }).click();
+  await expectControlValue(page, '[data-theme-field="accent"]', "#f97316");
 
   await page.screenshot({
     path: join(artifactDir, "desktop.png"),
@@ -81,15 +122,33 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   await page.getByRole("button", { name: "Import" }).click();
   await page.locator('[data-action="draft-title"]').fill("Imported Smoke");
   await page.locator('[data-action="draft-content"]').fill(`
-    <main onclick="alert('x')">
+    <style>
+      @import url("https://cdn.example.com/remote.css");
+      .fixed-hero { position: fixed; width: 100vw; background: url("https://cdn.example.com/bg.png"); }
+    </style>
+    <main class="fixed-hero" onclick="alert('x')">
       <section>
         <h1>Imported Smoke</h1>
         <p onmouseover="alert('x')">Unsafe import body.</p>
+        <iframe src="https://example.com/embed"></iframe>
         <script>alert('x')</script>
       </section>
     </main>
   `);
   await page.getByRole("button", { name: "Import sanitized HTML" }).click();
+  await expectText(page, "Import review");
+  await expectText(page, "HTML_REMOTE_RESOURCE");
+  await expectText(page, "HTML_SCRIPT_REMOVED");
+  await expectText(page, "HTML_INLINE_HANDLER_REMOVED");
+  await expectText(page, "Target impact is based on import/sanitize warnings only.");
+
+  await page.locator(".section-list button", { hasText: "section" }).first().click();
+  await expectText(page, "partially-editable");
+  await expectText(page, "Selected node contains editable text targets.");
+  const editableTargetCount = await page.locator("[data-edit-target-id]").count();
+  if (editableTargetCount > 0) {
+    await page.locator("[data-edit-target-id]").first().click();
+  }
   await frame.getByRole("heading", { name: "Imported Smoke" }).click();
   await page.locator('[data-action="text"]').fill("Imported Smoke Edited");
   await page.getByRole("button", { name: "Apply text" }).click();
@@ -106,6 +165,7 @@ async function runSmoke(page: Page, url: string): Promise<void> {
     "Imported inline event handlers must not reach the canvas.",
   );
 
+  const scriptUrlsBeforeExport = new Set(scriptUrls);
   await page.getByRole("button", { name: "Export evidence" }).click();
   await expectArtifactTabs(page, [
     "standalone.html",
@@ -113,7 +173,16 @@ async function runSmoke(page: Page, url: string): Promise<void> {
     "compatibility-report.json",
     "native-mapping-report.json",
   ]);
+  const exportScriptUrls = scriptUrls.filter(
+    (scriptUrl) => !scriptUrlsBeforeExport.has(scriptUrl),
+  );
+  if (exportScriptUrls.length === 0) {
+    throw new Error("Export drawer should lazy-load at least one local export chunk.");
+  }
+  assertNoExternalRequests(requestedUrls);
   await expectText(page, "Native mapping is a report/plan, not a Confluence page body.");
+  await expectText(page, "Recommendation:");
+  await expectText(page, "HTML_REMOTE_RESOURCE");
   await expectArtifactContains(page, "standalone.html", [
     "Imported Smoke Edited",
     "Confirm the Confluence fragment before sharing.",
@@ -156,6 +225,7 @@ async function runSmoke(page: Page, url: string): Promise<void> {
     );
   }
 
+  assertNoExternalRequests(requestedUrls);
   const blockingConsoleErrors = consoleErrors.filter(
     (message) => !message.includes("favicon"),
   );
@@ -252,6 +322,16 @@ async function expectTextAbsent(page: Page, text: string): Promise<void> {
   assertEqual(count, 0, `Forbidden text should be absent: ${text}`);
 }
 
+async function expectAnyText(page: Page, texts: string[]): Promise<void> {
+  for (const text of texts) {
+    if ((await page.getByText(text, { exact: false }).count()) > 0) {
+      return;
+    }
+  }
+
+  throw new Error(`Expected one of these texts: ${texts.join(" | ")}`);
+}
+
 async function expectArtifactContains(
   page: Page,
   filename: string,
@@ -271,6 +351,90 @@ async function expectArtifactTabs(page: Page, filenames: string[]): Promise<void
   for (const filename of filenames) {
     await page.getByRole("button", { name: filename }).waitFor();
   }
+}
+
+async function expectCanvasTextCount(
+  page: Page,
+  text: string,
+  expectedCount: number,
+): Promise<void> {
+  const frame = page.frameLocator("iframe").first();
+  await frame.locator("body").waitFor();
+  const actualCount = await frame
+    .locator("body")
+    .evaluate((body, expectedText) => {
+      const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+      let count = 0;
+
+      while (walker.nextNode()) {
+        if (walker.currentNode.textContent?.includes(expectedText)) {
+          count += 1;
+        }
+      }
+
+      return count;
+    }, text);
+
+  assertEqual(
+    actualCount,
+    expectedCount,
+    `Canvas should contain ${expectedCount} text node(s) matching ${text}.`,
+  );
+}
+
+async function expectCanvasTextOrder(
+  page: Page,
+  expectedTextsInOrder: string[],
+): Promise<void> {
+  const frame = page.frameLocator("iframe").first();
+  const canvasText = await frame
+    .locator("body")
+    .evaluate((body) => body.textContent?.replace(/\s+/g, " ").trim() ?? "");
+  let previousIndex = -1;
+
+  for (const expectedText of expectedTextsInOrder) {
+    const index = canvasText.indexOf(expectedText);
+
+    if (index === -1) {
+      throw new Error(`Canvas text does not include ${expectedText}: ${canvasText}`);
+    }
+
+    if (index < previousIndex) {
+      throw new Error(
+        `Canvas text order is wrong for ${expectedTextsInOrder.join(" -> ")}: ${canvasText}`,
+      );
+    }
+
+    previousIndex = index;
+  }
+}
+
+async function expectControlValue(
+  page: Page,
+  selector: string,
+  expectedValue: string,
+): Promise<void> {
+  const actualValue = await page.locator(selector).inputValue();
+
+  assertEqual(
+    actualValue,
+    expectedValue,
+    `${selector} should reflect the current control value.`,
+  );
+}
+
+function assertNoExternalRequests(requestedUrls: string[]): void {
+  const externalUrls = requestedUrls.filter((requestUrl) => {
+    const parsedUrl = new URL(requestUrl);
+
+    return !["127.0.0.1", "localhost"].includes(parsedUrl.hostname);
+  });
+
+  assertEqual(
+    externalUrls.length,
+    0,
+    `Browser smoke must not request external runtime assets: ${externalUrls.join(", ")}`,
+  );
 }
 
 function assertEqual<T>(actual: T, expected: T, message: string): void {

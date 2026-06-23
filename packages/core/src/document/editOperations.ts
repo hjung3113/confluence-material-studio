@@ -39,6 +39,11 @@ export type NodeEditability = {
   reason: string;
 };
 
+export type NodeStructureMutability = {
+  canMutate: boolean;
+  reason: string;
+};
+
 export type EditableTextTarget = {
   nodeId: string;
   role: SemanticRole;
@@ -115,6 +120,39 @@ export function getNodeEditability(
   return {
     status: "preserved-only",
     reason: "Selected node has no editable text targets.",
+  };
+}
+
+export function getNodeStructureMutability(
+  doc: ProjectDoc,
+  nodeId: string,
+): NodeStructureMutability {
+  if (doc.renderTree.id === nodeId) {
+    return {
+      canMutate: false,
+      reason: "Root document cannot be duplicated, deleted, or moved.",
+    };
+  }
+
+  const node = findNode(doc.renderTree, nodeId);
+
+  if (!node) {
+    return {
+      canMutate: false,
+      reason: "Selected node was not found.",
+    };
+  }
+
+  if (!canStructurallyMutateNode(doc, node)) {
+    return {
+      canMutate: false,
+      reason: "Preserved imported structure cannot be duplicated, deleted, or moved in MVP.",
+    };
+  }
+
+  return {
+    canMutate: true,
+    reason: "Selected node can be duplicated, deleted, or reordered.",
   };
 }
 
