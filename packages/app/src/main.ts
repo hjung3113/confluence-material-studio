@@ -526,6 +526,12 @@ function syncCanvasAdapter(): void {
 
 async function openExportDrawer(): Promise<void> {
   exportDrawerOpen = true;
+  if (exportResult && exportError === undefined) {
+    exportLoading = false;
+    render();
+    return;
+  }
+
   exportLoading = true;
   exportError = undefined;
   exportResult = undefined;
