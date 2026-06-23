@@ -1,5 +1,10 @@
 import type { CompatibilityRuleId } from "../compatibility/rules.js";
-import type { DocNode } from "@atlaskit/adf-schema";
+
+export type ConfluenceAdfDocument = {
+  type: "doc";
+  version: number;
+  content?: unknown[];
+};
 
 export type SourceArtifactKind = "html" | "markdown" | "outline" | "template";
 
@@ -97,7 +102,7 @@ export type NativeMappingReport = {
       status: "valid";
       validator: "@atlaskit/adf-schema";
     };
-    document: DocNode;
+    document: ConfluenceAdfDocument;
     mappedNodeIds: string[];
     unmappedNodeIds: string[];
   };

@@ -20,7 +20,7 @@ import type {
   MaterialBlockType,
   RenderNode,
   SemanticOverlayEntry,
-} from "@htmleditor/core";
+} from "@htmleditor/core/browser";
 import {
   createGrapesCanvasAdapter,
   type GrapesCanvasAdapter,
@@ -42,6 +42,9 @@ let draftContent =
   "<main><section><h1>Imported roadmap</h1><p>Replace this copy from the visual editor.</p></section></main>";
 let selectedArtifact = "standalone.html";
 let canvasAdapter: GrapesCanvasAdapter | undefined;
+let exportResult: ExportResult | undefined;
+let exportLoading = false;
+let exportError: string | undefined;
 
 let state: AppState = importSampleMaterial(
   createAppState({
@@ -55,7 +58,6 @@ const appRoot = getAppRoot();
 render();
 
 function render(): void {
-  const exportResult = state.doc ? exportCurrentProject(state) : undefined;
   const selectedText = getSelectedText(state);
   const selectedEntry = selectedOverlayEntry();
 
@@ -111,7 +113,7 @@ function render(): void {
       </aside>
 
       ${importDrawerOpen ? importDrawer() : ""}
-      ${exportDrawerOpen && exportResult ? exportDrawer(exportResult) : ""}
+      ${exportDrawerOpen ? exportDrawerContent() : ""}
     </main>
   `;
 
@@ -131,8 +133,13 @@ function bindEvents(): void {
   appRoot.querySelector('[data-action="toggle-export"]')?.addEventListener(
     "click",
     () => {
-      exportDrawerOpen = !exportDrawerOpen;
-      render();
+      if (exportDrawerOpen) {
+        exportDrawerOpen = false;
+        render();
+        return;
+      }
+
+      void openExportDrawer();
     },
   );
 
@@ -264,6 +271,7 @@ function importDraft(): void {
     title: draftTitle.trim() || "Imported HTML Draft",
     content: draftContent,
   });
+  invalidateExportResult();
   importDrawerOpen = false;
   exportDrawerOpen = false;
   selectedArtifact = "standalone.html";
@@ -401,6 +409,40 @@ function importDrawer(): string {
   `;
 }
 
+function exportDrawerContent(): string {
+  if (exportLoading) {
+    return `
+      <section class="drawer export-drawer" aria-label="Export evidence drawer">
+        <div class="drawer-header">
+          <div>
+            <h2>Export evidence</h2>
+            <p>Preparing core-backed export artifacts.</p>
+          </div>
+          <button data-action="close-export">Close</button>
+        </div>
+        <p>Loading export evidence...</p>
+      </section>
+    `;
+  }
+
+  if (exportError) {
+    return `
+      <section class="drawer export-drawer" aria-label="Export evidence drawer">
+        <div class="drawer-header">
+          <div>
+            <h2>Export evidence</h2>
+            <p>Native mapping is a report/plan, not a Confluence page body.</p>
+          </div>
+          <button data-action="close-export">Close</button>
+        </div>
+        <p class="locked-notice">${escapeHtml(exportError)}</p>
+      </section>
+    `;
+  }
+
+  return exportResult ? exportDrawer(exportResult) : "";
+}
+
 function exportDrawer(exportResult: ExportResult): string {
   const selectedArtifactContent = getExportArtifact(exportResult, selectedArtifact);
   const warningItems =
@@ -466,17 +508,44 @@ function syncCanvasAdapter(): void {
     },
     onSetSelectedText: (text) => {
       state = editSelectedText(state, text);
+      invalidateExportResult();
     },
     onAddCallout: () => {
       state = insertCalloutAfterSelection(state, {
         title: "Review note",
         body: "Confirm the Confluence fragment before sharing.",
       });
+      invalidateExportResult();
     },
     onAddMaterialBlock: (blockType) => {
       state = insertMaterialBlockAfterSelection(state, blockType);
+      invalidateExportResult();
     },
   });
+}
+
+async function openExportDrawer(): Promise<void> {
+  exportDrawerOpen = true;
+  exportLoading = true;
+  exportError = undefined;
+  exportResult = undefined;
+  selectedArtifact = "standalone.html";
+  render();
+
+  try {
+    exportResult = await exportCurrentProject(state);
+  } catch (error) {
+    exportError =
+      error instanceof Error ? error.message : "Unable to export project.";
+  } finally {
+    exportLoading = false;
+    render();
+  }
+}
+
+function invalidateExportResult(): void {
+  exportResult = undefined;
+  exportError = undefined;
 }
 
 function getCanvasHtmlForAdapter(): string {

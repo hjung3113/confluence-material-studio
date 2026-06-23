@@ -1,5 +1,4 @@
 import {
-  exportProject,
   editNodeText,
   importHtml,
   importMarkdown,
@@ -11,7 +10,7 @@ import {
   type ProjectDoc,
   type RenderNode,
   type SemanticRole,
-} from "@htmleditor/core";
+} from "@htmleditor/core/browser";
 
 export type ImportFixtureInput = {
   kind: "html" | "markdown";
@@ -211,10 +210,14 @@ export function setPreviewWidth(
   return { ...state, previewWidth };
 }
 
-export function exportCurrentProject(state: AppState): ExportResult {
+export async function exportCurrentProject(
+  state: AppState,
+): Promise<ExportResult> {
   if (!state.doc) {
     throw new Error("Cannot export before importing a document.");
   }
+
+  const { exportProject } = await import("@htmleditor/core/export");
 
   return exportProject(state.doc, {
     generatedAt: state.generatedAt,

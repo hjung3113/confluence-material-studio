@@ -6,6 +6,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node", "vitest"],
     "paths": {
+      "@htmleditor/core/browser": ["../core/src/browser.ts"],
+      "@htmleditor/core/export": ["../core/src/export/exportProject.ts"],
       "@htmleditor/core": ["../core/src/index.ts"]
     }
   },

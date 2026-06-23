@@ -39,7 +39,7 @@ describe("app model", () => {
     expect(getCanvasHtml(state)).toContain("Release Readiness");
   });
 
-  it("inserts a constrained callout block through the app model", () => {
+  it("inserts a constrained callout block through the app model", async () => {
     let state = createAppState({
       now: "2026-06-22T00:00:00.000Z",
       generatedAt: "2026-06-22T00:00:00.000Z",
@@ -51,7 +51,11 @@ describe("app model", () => {
       body: "Confirm the Confluence fragment before sharing.",
     });
 
-    const exported = exportCurrentProject(state);
+    const exportPromise = exportCurrentProject(state);
+
+    expect(exportPromise).toBeInstanceOf(Promise);
+
+    const exported = await exportPromise;
 
     expect(getCanvasHtml(state)).toContain("Review note");
     expect(getExportArtifact(exported, "standalone.html")).toContain(
@@ -64,7 +68,7 @@ describe("app model", () => {
     ).toBe(true);
   });
 
-  it("inserts constrained title, paragraph, and divider blocks through the app model", () => {
+  it("inserts constrained title, paragraph, and divider blocks through the app model", async () => {
     let state = createAppState({
       now: "2026-06-22T00:00:00.000Z",
       generatedAt: "2026-06-22T00:00:00.000Z",
@@ -78,7 +82,7 @@ describe("app model", () => {
     expect(getSelectedText(state)).toBe("New paragraph");
 
     state = insertMaterialBlockAfterSelection(state, "divider");
-    const exported = exportCurrentProject(state);
+    const exported = await exportCurrentProject(state);
 
     expect(getCanvasHtml(state)).toContain("New title");
     expect(getCanvasHtml(state)).toContain("New paragraph");
@@ -89,7 +93,7 @@ describe("app model", () => {
   });
 
 
-  it("imports, edits, previews, and exports an HTML fixture", () => {
+  it("imports, edits, previews, and exports an HTML fixture", async () => {
     let state = createAppState({
       now: "2026-06-22T00:00:00.000Z",
       generatedAt: "2026-06-22T00:00:00.000Z",
@@ -104,7 +108,7 @@ describe("app model", () => {
     state = editSelectedText(state, "Release Readiness Edited");
     state = setPreviewWidth(state, "tablet");
 
-    const result = exportCurrentProject(state);
+    const result = await exportCurrentProject(state);
 
     expect(state.previewWidth).toBe("tablet");
     expect(JSON.stringify(state.doc?.renderTree)).toContain(
@@ -160,7 +164,7 @@ describe("app model", () => {
     expect(editSelectedText(state, "No silent edit")).toBe(state);
   });
 
-  it("imports markdown and hostile fixtures through the same app model", () => {
+  it("imports markdown and hostile fixtures through the same app model", async () => {
     let markdownState = createAppState({
       now: "2026-06-22T00:00:00.000Z",
       generatedAt: "2026-06-22T00:00:00.000Z",
@@ -171,8 +175,9 @@ describe("app model", () => {
       content: readFixture("fixtures/markdown/product-outline.md"),
     });
 
-    expect(exportCurrentProject(markdownState).compatibilityReport.warnings)
-      .toEqual([]);
+    const markdownExport = await exportCurrentProject(markdownState);
+
+    expect(markdownExport.compatibilityReport.warnings).toEqual([]);
 
     let hostileState = createAppState({
       now: "2026-06-22T00:00:00.000Z",
@@ -184,8 +189,10 @@ describe("app model", () => {
       content: readFixture("fixtures/hostile/script-and-remote-assets.html"),
     });
 
+    const hostileExport = await exportCurrentProject(hostileState);
+
     expect(
-      exportCurrentProject(hostileState).compatibilityReport.warnings.map(
+      hostileExport.compatibilityReport.warnings.map(
         (warning) => warning.ruleId,
       ),
     ).toEqual([
@@ -196,7 +203,7 @@ describe("app model", () => {
     ]);
   });
 
-  it("imports a user HTML draft, exposes selected text, and reads export artifact content", () => {
+  it("imports a user HTML draft, exposes selected text, and reads export artifact content", async () => {
     let state = createAppState({
       now: "2026-06-22T00:00:00.000Z",
       generatedAt: "2026-06-22T00:00:00.000Z",
@@ -212,7 +219,7 @@ describe("app model", () => {
     expect(getSelectedText(state)).toBe("Initial proposal");
 
     state = editSelectedText(state, "Reviewed launch proposal");
-    const exported = exportCurrentProject(state);
+    const exported = await exportCurrentProject(state);
 
     expect(getSelectedText(state)).toBe("Reviewed launch proposal");
     expect(getExportArtifact(exported, "standalone.html")).toContain(
