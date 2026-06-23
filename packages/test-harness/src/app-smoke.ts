@@ -25,8 +25,6 @@ const requiredBundleText = [
   "confluence-fragment.html",
   "compatibility-report.json",
   "native-mapping-report.json",
-  "confluenceAdfDraft",
-  "@atlaskit/adf-schema",
   "data-core-node-id",
   "data-editor-host",
   "cms:add-callout",
@@ -34,6 +32,12 @@ const requiredBundleText = [
 ];
 
 const forbiddenBundleText = [
+  "@atlaskit/adf-schema",
+  "prosemirror",
+  "nodeFromJSON",
+  "confluenceAdfDraft",
+  "https://app.grapesjs.com",
+  "https://cdnjs.cloudflare.com",
   "Ecommerce",
   "Script widget",
   "Remote asset widget",

@@ -107,6 +107,12 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   );
 
   await page.getByRole("button", { name: "Export evidence" }).click();
+  await expectArtifactTabs(page, [
+    "standalone.html",
+    "confluence-fragment.html",
+    "compatibility-report.json",
+    "native-mapping-report.json",
+  ]);
   await expectText(page, "Native mapping is a report/plan, not a Confluence page body.");
   await expectArtifactContains(page, "standalone.html", [
     "Imported Smoke Edited",
@@ -132,27 +138,23 @@ async function runSmoke(page: Page, url: string): Promise<void> {
     false,
     "Native mapping artifact must remain a report.",
   );
-  assertEqual(
-    nativeMapping.confluenceAdfDraft?.schemaSource,
-    "@atlaskit/adf-schema",
-    "Native mapping report must expose the Atlaskit ADF draft source.",
-  );
-  assertEqual(
-    nativeMapping.confluenceAdfDraft?.validation?.status,
-    "valid",
-    "ADF draft should validate against the installed schema package.",
-  );
-  assertEqual(
-    nativeMapping.confluenceAdfDraft?.document?.type,
-    "doc",
-    "ADF draft should expose a document node.",
-  );
-
-  await page.setViewportSize({ width: 390, height: 900 });
-  await page.screenshot({
-    path: join(artifactDir, "mobile.png"),
-    fullPage: true,
-  });
+  if (nativeMapping.confluenceAdfDraft) {
+    assertEqual(
+      nativeMapping.confluenceAdfDraft.schemaSource,
+      "@atlaskit/adf-schema",
+      "Native mapping report must expose the Atlaskit ADF draft source.",
+    );
+    assertEqual(
+      nativeMapping.confluenceAdfDraft.validation?.status,
+      "valid",
+      "ADF draft should validate against the installed schema package.",
+    );
+    assertEqual(
+      nativeMapping.confluenceAdfDraft.document?.type,
+      "doc",
+      "ADF draft should expose a document node.",
+    );
+  }
 
   const blockingConsoleErrors = consoleErrors.filter(
     (message) => !message.includes("favicon"),
@@ -262,6 +264,12 @@ async function expectArtifactContains(
     if (!artifact.includes(expectedText)) {
       throw new Error(`${filename} does not include ${expectedText}`);
     }
+  }
+}
+
+async function expectArtifactTabs(page: Page, filenames: string[]): Promise<void> {
+  for (const filename of filenames) {
+    await page.getByRole("button", { name: filename }).waitFor();
   }
 }
 
