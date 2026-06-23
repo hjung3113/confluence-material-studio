@@ -5,8 +5,10 @@ import {
   duplicateSelection,
   editSelectedText,
   exportCurrentProject,
+  formatCompatibilityWarningDetail,
   getCanvasHtml,
   getExportArtifact,
+  getImportReviewSummary,
   getSelectedEditability,
   getSelectedEditableTextTargets,
   getSelectedText,
@@ -131,6 +133,7 @@ function render(): void {
         ${themeControls()}
         <h2>Compatibility hints</h2>
         <p class="compatibility-hint">${escapeHtml(selectedCompatibility(selectedEntry))}</p>
+        ${importReviewPanel()}
       </aside>
 
       ${importDrawerOpen ? importDrawer() : ""}
@@ -652,7 +655,10 @@ function exportDrawer(exportResult: ExportResult): string {
   const warningItems =
     exportResult.compatibilityReport.warnings.length > 0
       ? exportResult.compatibilityReport.warnings
-          .map((warning) => `<li>${warning.ruleId}</li>`)
+          .map(
+            (warning) =>
+              `<li>${escapeHtml(formatCompatibilityWarningDetail(warning))}</li>`,
+          )
           .join("")
       : "<li>No warnings</li>";
 
@@ -679,6 +685,49 @@ function exportDrawer(exportResult: ExportResult): string {
       <h2>Compatibility warnings</h2>
       <ul>${warningItems}</ul>
     </section>
+  `;
+}
+
+function importReviewPanel(): string {
+  const summary = getImportReviewSummary(state.doc, exportResult);
+  const targetImpact =
+    summary.targetImpact.length > 0
+      ? summary.targetImpact
+          .map(
+            (impact) =>
+              `<li>${escapeHtml(impact.target)}: ${impact.warningCount} (${escapeHtml(impact.ruleIds.join(", "))})</li>`,
+          )
+          .join("")
+      : summary.targetImpactStatus === "export-evidence"
+        ? "<li>No target warnings</li>"
+        : "<li>Final target impact pending export evidence</li>";
+  const sanitizerRules =
+    summary.sanitizerRuleIds.length > 0
+      ? summary.sanitizerRuleIds.join(", ")
+      : "none";
+
+  return `
+    <div class="import-review-panel">
+      <h2>Import review</h2>
+      <dl>
+        <div>
+          <dt>Sanitizer warnings</dt>
+          <dd>${summary.sanitizerWarningCount} (${escapeHtml(sanitizerRules)})</dd>
+        </div>
+        <div>
+          <dt>Editability</dt>
+          <dd>${summary.editabilityCounts.editable} editable / ${summary.editabilityCounts.partiallyEditable} partial / ${summary.editabilityCounts.preservedOnly} preserved</dd>
+        </div>
+        <div>
+          <dt>Target impact</dt>
+          <dd><ul>${targetImpact}</ul><p>${escapeHtml(summary.targetImpactNote)}</p></dd>
+        </div>
+        <div>
+          <dt>Source baseline</dt>
+          <dd>${escapeHtml(summary.sourceBaselineNote)}</dd>
+        </div>
+      </dl>
+    </div>
   `;
 }
 

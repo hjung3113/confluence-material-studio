@@ -311,9 +311,47 @@ h2 {
 
 .editable-targets,
 .control-group,
-.theme-controls {
+.theme-controls,
+.import-review-panel {
   display: grid;
   gap: 10px;
+}
+
+.import-review-panel {
+  border: 1px solid #d2dae6;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.import-review-panel dl {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+.import-review-panel dl > div {
+  display: grid;
+  gap: 3px;
+}
+
+.import-review-panel dt {
+  color: #536275;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.import-review-panel dd {
+  margin: 0;
+  color: #354154;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.import-review-panel ul {
+  display: grid;
+  gap: 4px;
+  padding-left: 16px;
 }
 
 .target-list {

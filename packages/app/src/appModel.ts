@@ -13,6 +13,8 @@ import {
   updateThemeTokens,
   type EditableTextTarget,
   type ExportResult,
+  type CompatibilityWarning,
+  type ExportTarget,
   type MaterialBlockType,
   type NodeEditability,
   type ProjectDoc,
@@ -53,6 +55,33 @@ export type AppState = {
   now: string;
   generatedAt: string;
   history: AppHistory;
+};
+
+export type EditabilityCountSummary = {
+  editable: number;
+  partiallyEditable: number;
+  preservedOnly: number;
+};
+
+type WarningRuleId = CompatibilityWarning["ruleId"];
+
+export type TargetImpactSummary = {
+  target: ExportTarget;
+  warningCount: number;
+  ruleIds: WarningRuleId[];
+};
+
+export type ImportReviewSummary = {
+  sanitizerWarningCount: number;
+  sanitizerRuleIds: WarningRuleId[];
+  editabilityCounts: EditabilityCountSummary;
+  targetImpact: TargetImpactSummary[];
+  targetImpactStatus:
+    | "pending-export-evidence"
+    | "import-sanitize-only"
+    | "export-evidence";
+  targetImpactNote: string;
+  sourceBaselineNote: string;
 };
 
 export function createAppState(options: {
@@ -357,6 +386,56 @@ export function getExportArtifact(
   );
 }
 
+export function getImportReviewSummary(
+  doc: ProjectDoc | undefined,
+  exportResult?: ExportResult,
+): ImportReviewSummary {
+  if (!doc) {
+    return {
+      sanitizerWarningCount: 0,
+      sanitizerRuleIds: [],
+      editabilityCounts: emptyEditabilityCounts(),
+      targetImpact: [],
+      targetImpactStatus: "pending-export-evidence",
+      targetImpactNote:
+        "Import a document before reviewing target compatibility impact.",
+      sourceBaselineNote: "Source baseline unavailable until import.",
+    };
+  }
+
+  const sanitizerWarningEntries = doc.transformationTrace.filter(
+    (entry) => entry.stage === "sanitize" && entry.ruleId,
+  );
+  const sanitizerRuleIds = uniqueRuleIds(
+    sanitizerWarningEntries
+      .map((entry) => entry.ruleId)
+      .filter((ruleId): ruleId is WarningRuleId => Boolean(ruleId)),
+  );
+  const warnings =
+    exportResult?.compatibilityReport.warnings ??
+    doc.transformationTrace
+      .filter((entry) => entry.ruleId)
+      .map((entry) => traceWarningFallback(entry.ruleId!, entry.message));
+
+  return {
+    sanitizerWarningCount: sanitizerWarningEntries.length,
+    sanitizerRuleIds,
+    editabilityCounts: summarizeEditability(doc),
+    targetImpact: summarizeTargetImpact(warnings),
+    targetImpactStatus: targetImpactStatus(exportResult, warnings),
+    targetImpactNote: targetImpactNote(exportResult),
+    sourceBaselineNote: doc.sourceArtifact
+      ? `Source baseline available from immutable ${doc.sourceArtifact.kind} import.`
+      : "Source baseline unavailable until import.",
+  };
+}
+
+export function formatCompatibilityWarningDetail(
+  warning: CompatibilityWarning,
+): string {
+  return `${warning.severity} | ${warning.target} | ${warning.ruleId} | ${warning.message} Recommendation: ${warning.recommendation}`;
+}
+
 export function setPreviewWidth(
   state: AppState,
   previewWidth: PreviewWidth,
@@ -405,6 +484,103 @@ function firstEditableNode(doc: ProjectDoc): RenderNode | undefined {
   return editableEntry
     ? findNode(doc.renderTree, editableEntry.nodeId)
     : undefined;
+}
+
+function summarizeEditability(doc: ProjectDoc): EditabilityCountSummary {
+  const counts = emptyEditabilityCounts();
+
+  visitNode(doc.renderTree, (node) => {
+    if (node.tag === "#text") {
+      return;
+    }
+
+    const status = getNodeEditability(doc, node.id).status;
+
+    if (status === "editable") {
+      counts.editable += 1;
+    } else if (status === "partially-editable") {
+      counts.partiallyEditable += 1;
+    } else {
+      counts.preservedOnly += 1;
+    }
+  });
+
+  return counts;
+}
+
+function summarizeTargetImpact(
+  warnings: CompatibilityWarning[],
+): TargetImpactSummary[] {
+  const byTarget = new Map<
+    ExportTarget,
+    { warningCount: number; ruleIds: Set<WarningRuleId> }
+  >();
+
+  for (const warning of warnings) {
+    const impact = byTarget.get(warning.target) ?? {
+      warningCount: 0,
+      ruleIds: new Set<WarningRuleId>(),
+    };
+    impact.warningCount += 1;
+    impact.ruleIds.add(warning.ruleId);
+    byTarget.set(warning.target, impact);
+  }
+
+  return Array.from(byTarget.entries()).map(([target, impact]) => ({
+    target,
+    warningCount: impact.warningCount,
+    ruleIds: Array.from(impact.ruleIds),
+  }));
+}
+
+function traceWarningFallback(
+  ruleId: WarningRuleId,
+  message: string,
+): CompatibilityWarning {
+  return {
+    ruleId,
+    target: ruleId.startsWith("CF_FRAGMENT")
+      ? "confluence-fragment"
+      : ruleId.startsWith("CF_NATIVE")
+        ? "native-mapping"
+        : "standalone-html",
+    severity: ruleId === "HTML_JAVASCRIPT_URL" ? "error" : "warning",
+    message,
+    recommendation: "Open export evidence for full recommendation.",
+  };
+}
+
+function uniqueRuleIds(ruleIds: WarningRuleId[]): WarningRuleId[] {
+  return Array.from(new Set(ruleIds));
+}
+
+function targetImpactStatus(
+  exportResult: ExportResult | undefined,
+  warnings: CompatibilityWarning[],
+): ImportReviewSummary["targetImpactStatus"] {
+  if (exportResult) {
+    return "export-evidence";
+  }
+
+  return warnings.length > 0 ? "import-sanitize-only" : "pending-export-evidence";
+}
+
+function targetImpactNote(
+  exportResult: ExportResult | undefined,
+): string {
+  if (exportResult) {
+    return "Target impact is based on export compatibility evidence.";
+  }
+
+  return "Target impact is based on import/sanitize warnings only. Export evidence calculates final compatibility warnings.";
+}
+
+function emptyEditabilityCounts(): EditabilityCountSummary {
+  return {
+    editable: 0,
+    partiallyEditable: 0,
+    preservedOnly: 0,
+  };
 }
 
 function findNode(node: RenderNode, nodeId: string): RenderNode | undefined {

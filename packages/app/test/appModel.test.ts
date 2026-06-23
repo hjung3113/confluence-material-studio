@@ -10,9 +10,11 @@ import {
   editSelectedText,
   getCanvasHtml,
   getExportArtifact,
+  getImportReviewSummary,
   getSelectedEditability,
   getSelectedEditableTextTargets,
   getSelectedText,
+  formatCompatibilityWarningDetail,
   moveSelection,
   redo,
   shouldShowEditableTextTargetList,
@@ -210,6 +212,183 @@ describe("app model", () => {
       "HTML_INLINE_HANDLER_REMOVED",
       "HTML_JAVASCRIPT_URL",
     ]);
+  });
+
+  it("summarizes hostile import review evidence before export is opened", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Hostile Import",
+      content: readFixture("fixtures/hostile/script-and-remote-assets.html"),
+    });
+
+    const summary = getImportReviewSummary(state.doc);
+
+    expect(summary.sanitizerWarningCount).toBe(4);
+    expect(summary.sanitizerRuleIds).toEqual([
+      "HTML_REMOTE_RESOURCE",
+      "HTML_SCRIPT_REMOVED",
+      "HTML_INLINE_HANDLER_REMOVED",
+      "HTML_JAVASCRIPT_URL",
+    ]);
+    expect(summary.targetImpact).toEqual([
+      {
+        target: "standalone-html",
+        warningCount: 4,
+        ruleIds: [
+          "HTML_REMOTE_RESOURCE",
+          "HTML_SCRIPT_REMOVED",
+          "HTML_INLINE_HANDLER_REMOVED",
+          "HTML_JAVASCRIPT_URL",
+        ],
+      },
+    ]);
+    expect(summary.sourceBaselineNote).toBe(
+      "Source baseline available from immutable html import.",
+    );
+  });
+
+  it("counts duplicate warning entries while keeping rule IDs unique", async () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Hostile Import",
+      content: readFixture("fixtures/hostile/script-and-remote-assets.html"),
+    });
+
+    const duplicatedDoc = {
+      ...state.doc!,
+      transformationTrace: [
+        ...state.doc!.transformationTrace,
+        {
+          id: "trace-sanitize-duplicate",
+          stage: "sanitize" as const,
+          ruleId: "HTML_REMOTE_RESOURCE" as const,
+          message: "Duplicate remote resource warning.",
+          createdAt: "2026-06-22T00:00:00.000Z",
+        },
+      ],
+    };
+    const preExportSummary = getImportReviewSummary(duplicatedDoc);
+
+    expect(preExportSummary.sanitizerWarningCount).toBe(5);
+    expect(preExportSummary.sanitizerRuleIds).toEqual([
+      "HTML_REMOTE_RESOURCE",
+      "HTML_SCRIPT_REMOVED",
+      "HTML_INLINE_HANDLER_REMOVED",
+      "HTML_JAVASCRIPT_URL",
+    ]);
+    expect(preExportSummary.targetImpact).toEqual([
+      {
+        target: "standalone-html",
+        warningCount: 5,
+        ruleIds: [
+          "HTML_REMOTE_RESOURCE",
+          "HTML_SCRIPT_REMOVED",
+          "HTML_INLINE_HANDLER_REMOVED",
+          "HTML_JAVASCRIPT_URL",
+        ],
+      },
+    ]);
+
+    const exported = await exportCurrentProject(state);
+    const exportedWithDuplicate = {
+      ...exported,
+      compatibilityReport: {
+        ...exported.compatibilityReport,
+        warnings: [
+          ...exported.compatibilityReport.warnings,
+          exported.compatibilityReport.warnings[0]!,
+        ],
+      },
+    };
+    const exportSummary = getImportReviewSummary(
+      state.doc,
+      exportedWithDuplicate,
+    );
+
+    expect(exportSummary.targetImpact[0]).toEqual({
+      target: "standalone-html",
+      warningCount: 5,
+      ruleIds: [
+        "HTML_REMOTE_RESOURCE",
+        "HTML_SCRIPT_REMOVED",
+        "HTML_INLINE_HANDLER_REMOVED",
+        "HTML_JAVASCRIPT_URL",
+      ],
+    });
+  });
+
+  it("marks target impact as pending before export compatibility evidence exists", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Confluence CSS Risk",
+      content:
+        "<main><style>.hero { position: fixed; width: 1200px; height: 100vh; }</style><section><h1>Risk</h1></section></main>",
+    });
+
+    const summary = getImportReviewSummary(state.doc);
+
+    expect(summary.sanitizerWarningCount).toBe(0);
+    expect(summary.targetImpact).toEqual([]);
+    expect(summary.targetImpactStatus).toBe("pending-export-evidence");
+    expect(summary.targetImpactNote).toBe(
+      "Target impact is based on import/sanitize warnings only. Export evidence calculates final compatibility warnings.",
+    );
+  });
+
+  it("summarizes editable, partially editable, and preserved-only node counts", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Nested Targets",
+      content:
+        "<main><section><h1>Review note</h1><p>Confirm fragment.</p><custom-widget>Preserved only</custom-widget></section></main>",
+    });
+
+    const summary = getImportReviewSummary(state.doc);
+
+    expect(summary.editabilityCounts.editable).toBe(2);
+    expect(summary.editabilityCounts.partiallyEditable).toBe(3);
+    expect(summary.editabilityCounts.preservedOnly).toBe(1);
+  });
+
+  it("formats compatibility warnings with operational detail", async () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Hostile Import",
+      content: readFixture("fixtures/hostile/script-and-remote-assets.html"),
+    });
+
+    const hostileExport = await exportCurrentProject(state);
+    const firstWarning = hostileExport.compatibilityReport.warnings[0];
+
+    expect(firstWarning).toBeDefined();
+    expect(formatCompatibilityWarningDetail(firstWarning!)).toBe(
+      "warning | standalone-html | HTML_REMOTE_RESOURCE | Output depends on a remote resource. Recommendation: Replace with local asset or embedded data.",
+    );
   });
 
   it("imports a user HTML draft, exposes selected text, and reads export artifact content", async () => {
