@@ -16,7 +16,7 @@
     "app:build": "npm run build --workspace @htmleditor/app",
     "app:smoke": "npm run app:build && npm run smoke --workspace @htmleditor/test-harness",
     "browser:smoke": "npm run app:build && npm run browser:smoke --workspace @htmleditor/test-harness",
-    "verify": "npm run typecheck --workspaces && npm test --workspaces && npm run app:smoke"
+    "verify": "npm run build --workspace @htmleditor/core && npm run typecheck --workspaces && npm test --workspaces && npm run app:smoke"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,4 +1,3 @@
-import { resolve } from "node:path";
 import { defineConfig, normalizePath } from "vite";
 
 const grapesJsModuleSuffix = "/node_modules/grapesjs/dist/grapes.mjs";
@@ -39,16 +38,6 @@ function stripGrapesJsRemoteDefaults() {
 export default defineConfig({
   base: "./",
   plugins: [stripGrapesJsRemoteDefaults()],
-  resolve: {
-    alias: {
-      "@htmleditor/core/browser": resolve(__dirname, "../core/src/browser.ts"),
-      "@htmleditor/core/export": resolve(
-        __dirname,
-        "../core/src/export/exportProject.ts",
-      ),
-      "@htmleditor/core": resolve(__dirname, "../core/src/index.ts"),
-    },
-  },
   build: {
     target: "es2022",
   },

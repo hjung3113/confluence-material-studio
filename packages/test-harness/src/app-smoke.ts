@@ -46,6 +46,8 @@ const forbiddenBundleText = [
 ];
 
 async function main(): Promise<void> {
+  assertCoreSubpathsResolveViaPackageExports();
+  await assertCorePackageExportsResolveAndImport();
   assertBuiltApp();
 
   const indexHtml = readFileSync(join(appDist, "index.html"), "utf8");
@@ -70,6 +72,69 @@ async function main(): Promise<void> {
   console.log(
     "APP_SMOKE_PASS built app artifacts and canvas-first editor markers verified",
   );
+}
+
+async function assertCorePackageExportsResolveAndImport(): Promise<void> {
+  const expectedSubpaths = [
+    {
+      specifier: "@htmleditor/core",
+      resolvedSuffix: "/packages/core/dist/src/index.js",
+      requiredExport: "importHtml",
+    },
+    {
+      specifier: "@htmleditor/core/browser",
+      resolvedSuffix: "/packages/core/dist/src/browser.js",
+      requiredExport: "importHtml",
+    },
+    {
+      specifier: "@htmleditor/core/export",
+      resolvedSuffix: "/packages/core/dist/src/export/exportProject.js",
+      requiredExport: "exportProject",
+    },
+  ] as const;
+
+  for (const { specifier, resolvedSuffix, requiredExport } of expectedSubpaths) {
+    const resolvedUrl = import.meta.resolve(specifier);
+
+    if (!resolvedUrl.endsWith(resolvedSuffix)) {
+      throw new Error(
+        `${specifier} must resolve through core package exports to ${resolvedSuffix}; resolved ${resolvedUrl}.`,
+      );
+    }
+
+    if (resolvedUrl.includes("/packages/core/src/")) {
+      throw new Error(
+        `${specifier} resolved to core source instead of built dist: ${resolvedUrl}.`,
+      );
+    }
+
+    const importedModule = (await import(specifier)) as Record<string, unknown>;
+
+    if (typeof importedModule[requiredExport] !== "function") {
+      throw new Error(
+        `${specifier} did not import expected export ${requiredExport}.`,
+      );
+    }
+  }
+}
+
+function assertCoreSubpathsResolveViaPackageExports(): void {
+  const appConfigFiles = [
+    "packages/app/tsconfig.json",
+    "packages/app/vite.config.ts",
+  ];
+  const forbiddenSourceAliasPattern =
+    /@htmleditor\/core(?:\/browser|\/export)?[\s\S]{0,120}\.\.\/core\/src/;
+
+  for (const configFile of appConfigFiles) {
+    const config = readFileSync(resolve(repoRoot, configFile), "utf8");
+
+    if (forbiddenSourceAliasPattern.test(config)) {
+      throw new Error(
+        `${configFile} must resolve @htmleditor/core subpaths through package exports, not ../core/src aliases.`,
+      );
+    }
+  }
 }
 
 function assertBuiltApp(): void {
