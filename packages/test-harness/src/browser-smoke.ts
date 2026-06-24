@@ -126,12 +126,14 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   await page.locator('[data-action="draft-content"]').fill(`
     <style>
       @import url("https://cdn.example.com/remote.css");
-      .fixed-hero { position: fixed; width: 100vw; background: url("https://cdn.example.com/bg.png"); }
+      .fixed-probe { position: fixed; width: 100vw; background: url("https://cdn.example.com/bg.png"); }
+      .wide-deck { width: 1440px; min-height: 620px; background: #ffffff; }
     </style>
-    <main class="fixed-hero" onclick="alert('x')">
+    <main class="wide-deck" onclick="alert('x')">
       <section>
         <h1>Imported Smoke</h1>
         <p onmouseover="alert('x')">Unsafe import body.</p>
+        <div class="fixed-probe">Fixed probe</div>
         <iframe src="https://example.com/embed"></iframe>
         <script>alert('x')</script>
       </section>
@@ -143,7 +145,8 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   await expectText(page, "HTML_SCRIPT_REMOVED");
   await expectText(page, "HTML_INLINE_HANDLER_REMOVED");
   await expectText(page, "Target impact is based on import/sanitize warnings only.");
-  await expectFrameComputedStyle(page, "main.fixed-hero", "position", "fixed");
+  await expectFrameComputedStyle(page, ".fixed-probe", "position", "fixed");
+  await expectFrameContentFitsViewport(page);
 
   await page.locator(".section-list button", { hasText: "section" }).first().click();
   await expectText(page, "partially-editable");
@@ -474,6 +477,25 @@ async function expectPanelCollapseControls(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Open inspector panel" }).click();
   await page.locator('.studio-shell[data-left-rail="expanded"]').waitFor();
   await page.locator('.studio-shell[data-inspector="expanded"]').waitFor();
+}
+
+async function expectFrameContentFitsViewport(page: Page): Promise<void> {
+  const frame = page.frameLocator("iframe").first();
+  const metrics = await frame.locator(".wide-deck").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      viewportWidth: element.ownerDocument.documentElement.clientWidth,
+      left: rect.left,
+      right: rect.right,
+      width: rect.width,
+    };
+  });
+
+  if (metrics.left < -1 || metrics.right > metrics.viewportWidth + 1) {
+    throw new Error(
+      `Imported HTML should fit the iframe viewport without horizontal clipping. viewportWidth ${metrics.viewportWidth}, left ${metrics.left}, right ${metrics.right}, width ${metrics.width}.`,
+    );
+  }
 }
 
 async function expectFrameComputedStyle(
