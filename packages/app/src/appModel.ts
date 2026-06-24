@@ -369,7 +369,6 @@ export function getCanvasHtml(state: AppState): string {
   return state.doc
     ? renderTreeToHtml(state.doc.renderTree, {
         includeNodeIds: true,
-        omitStyleTags: true,
       })
     : "";
 }

@@ -141,6 +141,7 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   await expectText(page, "HTML_SCRIPT_REMOVED");
   await expectText(page, "HTML_INLINE_HANDLER_REMOVED");
   await expectText(page, "Target impact is based on import/sanitize warnings only.");
+  await expectFrameComputedStyle(page, "main.fixed-hero", "position", "fixed");
 
   await page.locator(".section-list button", { hasText: "section" }).first().click();
   await expectText(page, "partially-editable");
@@ -420,6 +421,26 @@ async function expectControlValue(
     actualValue,
     expectedValue,
     `${selector} should reflect the current control value.`,
+  );
+}
+
+async function expectFrameComputedStyle(
+  page: Page,
+  selector: string,
+  propertyName: string,
+  expectedValue: string,
+): Promise<void> {
+  const frame = page.frameLocator("iframe").first();
+  const actualValue = await frame.locator(selector).evaluate(
+    (element, property) =>
+      getComputedStyle(element).getPropertyValue(property).trim(),
+    propertyName,
+  );
+
+  assertEqual(
+    actualValue,
+    expectedValue,
+    `${selector} should apply imported CSS property ${propertyName}.`,
   );
 }
 

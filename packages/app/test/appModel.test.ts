@@ -159,6 +159,26 @@ describe("app model", () => {
     });
   });
 
+  it("keeps sanitized imported style tags in the canvas preview html", () => {
+    let state = createAppState({
+      now: "2026-06-22T00:00:00.000Z",
+      generatedAt: "2026-06-22T00:00:00.000Z",
+    });
+
+    state = importFixture(state, {
+      kind: "html",
+      title: "Styled Import",
+      content:
+        '<main><style>.hero-title { color: rgb(220, 38, 38); }</style><section><h1 class="hero-title">Styled title</h1></section></main>',
+    });
+
+    expect(getCanvasHtml(state)).toContain("<style ");
+    expect(getCanvasHtml(state)).toContain(
+      ".hero-title { color: rgb(220, 38, 38); }",
+    );
+    expect(getCanvasHtml(state)).toContain('class="hero-title"');
+  });
+
   it("does not expose selected text for non-direct text containers", () => {
     let state = createAppState({
       now: "2026-06-22T00:00:00.000Z",
