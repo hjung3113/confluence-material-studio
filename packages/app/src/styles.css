@@ -200,7 +200,7 @@ h2 {
 .panel-reopen {
   position: fixed;
   z-index: 9;
-  top: 96px;
+  bottom: 18px;
   min-height: 34px;
   box-shadow: 0 8px 18px rgb(23 32 51 / 16%);
   font-size: 12px;
@@ -286,7 +286,16 @@ h2 {
   background-color: #ffffff;
 }
 
+.canvas-surface .gjs-cv-canvas,
+.canvas-surface .gjs-cv-canvas__frames,
+.canvas-surface .gjs-frame-wrapper {
+  background: #ffffff;
+}
+
 .canvas-surface .gjs-editor {
+  --gjs-main-color: #ffffff;
+  --gjs-primary-color: #ffffff;
+  --gjs-font-color: #172033;
   background: #ffffff;
 }
 

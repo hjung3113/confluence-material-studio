@@ -379,6 +379,8 @@ function importDraft(): void {
     title: draftTitle.trim() || "Imported HTML Draft",
     content: draftContent,
   });
+  leftRailCollapsed = true;
+  inspectorCollapsed = true;
   invalidateExportResult();
   importDrawerOpen = false;
   exportDrawerOpen = false;

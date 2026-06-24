@@ -10,11 +10,6 @@ import { getAllowedBlockDefinitions } from "./blockPalette.js";
 
 export type GrapesPreviewWidth = "desktop" | "tablet" | "mobile";
 
-const PREVIEW_DEVICE_WIDTHS: Record<GrapesPreviewWidth, number> = {
-  desktop: 1440,
-  tablet: 760,
-  mobile: 390,
-};
 const FIT_ROOT_SELECTOR = "[data-cms-fit-root]";
 
 export type GrapesCanvasAdapterOptions = {
@@ -49,10 +44,9 @@ export function createGrapesCanvasAdapter(
 
   registerAllowedBlocks(editor);
   registerCalloutCommand(editor, options.onAddCallout);
-  setEditorPreviewWidth(editor, options.host, previewWidth);
+  setEditorPreviewWidth(editor, previewWidth);
   selectCoreNode(editor, selectedNodeId);
   const resizeObserver = observeHostResize(options.host, () => {
-    fitPreviewToHost(editor, options.host, previewWidth);
     fitImportedContentToFrame(editor);
   });
 
@@ -62,7 +56,6 @@ export function createGrapesCanvasAdapter(
   });
 
   editor.on("canvas:frame:load", () => {
-    fitPreviewToHost(editor, options.host, previewWidth);
     fitImportedContentToFrame(editor);
   });
 
@@ -70,7 +63,6 @@ export function createGrapesCanvasAdapter(
     loadSafeHtml(safeHtml, nextSelectedNodeId) {
       selectedNodeId = nextSelectedNodeId;
       editor.setComponents(wrapCanvasPreviewHtml(safeHtml));
-      fitPreviewToHost(editor, options.host, previewWidth);
       fitImportedContentToFrame(editor);
       selectCoreNode(editor, selectedNodeId);
     },
@@ -88,7 +80,7 @@ export function createGrapesCanvasAdapter(
     },
     setPreviewWidth(nextPreviewWidth) {
       previewWidth = nextPreviewWidth;
-      setEditorPreviewWidth(editor, options.host, previewWidth);
+      setEditorPreviewWidth(editor, previewWidth);
     },
     destroy() {
       resizeObserver?.disconnect();
@@ -134,7 +126,7 @@ export function buildGrapesEditorConfig(
     },
     deviceManager: {
       devices: [
-        { id: "desktop", name: "desktop", width: `${PREVIEW_DEVICE_WIDTHS.desktop}px` },
+        { id: "desktop", name: "desktop", width: "" },
         { id: "tablet", name: "tablet", width: "760px" },
         { id: "mobile", name: "mobile", width: "390px" },
       ],
@@ -169,11 +161,11 @@ function registerCalloutCommand(editor: Editor, onAddCallout: () => void): void 
 
 function setEditorPreviewWidth(
   editor: Editor,
-  host: HTMLElement,
   previewWidth: GrapesPreviewWidth,
 ): void {
   editor.setDevice(previewWidth);
-  fitPreviewToHost(editor, host, previewWidth);
+  editor.Canvas.setZoom(100);
+  fitImportedContentToFrame(editor);
 }
 
 function observeHostResize(
@@ -187,26 +179,6 @@ function observeHostResize(
   const resizeObserver = new ResizeObserver(onResize);
   resizeObserver.observe(host);
   return resizeObserver;
-}
-
-function fitPreviewToHost(
-  editor: Editor,
-  host: HTMLElement,
-  previewWidth: GrapesPreviewWidth,
-): void {
-  window.requestAnimationFrame(() => {
-    const targetWidth = PREVIEW_DEVICE_WIDTHS[previewWidth];
-    const hostWidth = host.clientWidth;
-
-    if (targetWidth <= 0 || hostWidth <= 0) {
-      return;
-    }
-
-    const zoom = Math.min(100, Math.max(25, (hostWidth / targetWidth) * 100));
-    editor.Canvas.setZoom(zoom);
-    editor.refresh();
-    fitImportedContentToFrame(editor);
-  });
 }
 
 function fitImportedContentToFrame(editor: Editor): void {

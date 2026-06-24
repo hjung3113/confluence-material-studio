@@ -127,19 +127,34 @@ async function runSmoke(page: Page, url: string): Promise<void> {
     <style>
       @import url("https://cdn.example.com/remote.css");
       .fixed-probe { position: fixed; width: 100vw; background: url("https://cdn.example.com/bg.png"); }
-      .wide-deck { width: 1440px; min-height: 620px; background: #ffffff; }
+      .wide-deck { width: 1920px; min-height: 1080px; background: #ffffff; color: #172033; font-family: Arial, sans-serif; }
+      .wide-hero { height: 360px; padding: 96px 120px; background: #dbeafe; border-bottom: 12px solid #0f766e; }
+      .wide-hero h1 { margin: 0 0 24px; font-size: 96px; }
+      .wide-hero p { margin: 0; font-size: 38px; }
+      .wide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; padding: 64px 120px; }
+      .wide-card { min-height: 220px; background: #f8fafc; border: 4px solid #cbd5e1; padding: 40px; font-size: 32px; }
     </style>
     <main class="wide-deck" onclick="alert('x')">
-      <section>
+      <section class="wide-hero">
         <h1>Imported Smoke</h1>
         <p onmouseover="alert('x')">Unsafe import body.</p>
         <div class="fixed-probe">Fixed probe</div>
         <iframe src="https://example.com/embed"></iframe>
         <script>alert('x')</script>
       </section>
+      <section class="wide-grid">
+        <article class="wide-card">Wide card A</article>
+        <article class="wide-card">Wide card B</article>
+        <article class="wide-card">Wide card C</article>
+      </section>
     </main>
   `);
   await page.getByRole("button", { name: "Import sanitized HTML" }).click();
+  await page.screenshot({
+    path: join(artifactDir, "imported-1920-focus.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Open inspector panel" }).click();
   await expectText(page, "Import review");
   await expectText(page, "HTML_REMOTE_RESOURCE");
   await expectText(page, "HTML_SCRIPT_REMOVED");
@@ -147,7 +162,13 @@ async function runSmoke(page: Page, url: string): Promise<void> {
   await expectText(page, "Target impact is based on import/sanitize warnings only.");
   await expectFrameComputedStyle(page, ".fixed-probe", "position", "fixed");
   await expectFrameContentFitsViewport(page);
+  await expectImportedCanvasLooksLight(page);
+  await page.screenshot({
+    path: join(artifactDir, "imported-1920-fit.png"),
+    fullPage: true,
+  });
 
+  await page.getByRole("button", { name: "Open document panel" }).click();
   await page.locator(".section-list button", { hasText: "section" }).first().click();
   await expectText(page, "partially-editable");
   await expectText(page, "Selected node contains editable text targets.");
@@ -491,11 +512,44 @@ async function expectFrameContentFitsViewport(page: Page): Promise<void> {
     };
   });
 
-  if (metrics.left < -1 || metrics.right > metrics.viewportWidth + 1) {
+  if (
+    metrics.left < -1 ||
+    metrics.right > metrics.viewportWidth + 1 ||
+    metrics.width < metrics.viewportWidth * 0.9
+  ) {
     throw new Error(
       `Imported HTML should fit the iframe viewport without horizontal clipping. viewportWidth ${metrics.viewportWidth}, left ${metrics.left}, right ${metrics.right}, width ${metrics.width}.`,
     );
   }
+}
+
+async function expectImportedCanvasLooksLight(page: Page): Promise<void> {
+  const canvasBackground = await page
+    .locator(".gjs-cv-canvas-bg")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  const frame = page.frameLocator("iframe").first();
+  const bodyBackground = await frame
+    .locator("body")
+    .evaluate((body) => getComputedStyle(body).backgroundColor);
+  const importedBackground = await frame
+    .locator(".wide-deck")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+
+  assertEqual(
+    canvasBackground,
+    "rgb(255, 255, 255)",
+    "Canvas chrome should stay light after importing wide HTML.",
+  );
+  assertEqual(
+    bodyBackground,
+    "rgb(255, 255, 255)",
+    "Iframe body should stay light after importing wide HTML.",
+  );
+  assertEqual(
+    importedBackground,
+    "rgb(255, 255, 255)",
+    "Imported 1920px fixture should render with its light background.",
+  );
 }
 
 async function expectFrameComputedStyle(
