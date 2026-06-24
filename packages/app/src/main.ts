@@ -50,6 +50,8 @@ let draftTitle = "Imported HTML Draft";
 let draftContent =
   "<main><section><h1>Imported roadmap</h1><p>Replace this copy from the visual editor.</p></section></main>";
 let selectedArtifact = "standalone.html";
+let leftRailCollapsed = false;
+let inspectorCollapsed = false;
 let canvasAdapter: GrapesCanvasAdapter | undefined;
 let canvasAdapterModulePromise:
   | Promise<typeof import("./editor/grapesAdapter.js")>
@@ -80,7 +82,7 @@ function render(): void {
   const editableTextTargets = getSelectedEditableTextTargets(state);
 
   appRoot.innerHTML = `
-    <main class="studio-shell" data-testid="visual-editor-shell">
+    <main class="studio-shell" data-testid="visual-editor-shell" data-left-rail="${leftRailCollapsed ? "collapsed" : "expanded"}" data-inspector="${inspectorCollapsed ? "collapsed" : "expanded"}">
       <header class="topbar">
         <div class="brand-block">
           <h1>Confluence Material Studio</h1>
@@ -101,7 +103,10 @@ function render(): void {
       </header>
 
       <aside class="left-rail" aria-label="Document outline">
-        <h2>Document outline</h2>
+        <div class="panel-header">
+          <h2>Document outline</h2>
+          <button class="icon-action" data-action="toggle-left-rail" aria-label="Collapse document panel" title="Collapse document panel">&lt;</button>
+        </div>
         <nav class="section-list">
           ${outlineButtons()}
         </nav>
@@ -126,7 +131,10 @@ function render(): void {
       </section>
 
       <aside class="inspector-panel">
-        <h2>Inspector</h2>
+        <div class="panel-header">
+          <h2>Inspector</h2>
+          <button class="icon-action" data-action="toggle-inspector" aria-label="Collapse inspector panel" title="Collapse inspector panel">&gt;</button>
+        </div>
         <p class="selected-node">Selected: ${escapeHtml(selectedLabel(selectedEntry))}</p>
         <div class="editability-status">
           <span class="editability-badge ${selectedEditability.status}">${escapeHtml(selectedEditability.status)}</span>
@@ -143,6 +151,8 @@ function render(): void {
 
       ${importDrawerOpen ? importDrawer() : ""}
       ${exportDrawerOpen ? exportDrawerContent() : ""}
+      ${leftRailCollapsed ? '<button class="panel-reopen panel-reopen-left" data-action="toggle-left-rail" aria-label="Open document panel" title="Open document panel">Outline</button>' : ""}
+      ${inspectorCollapsed ? '<button class="panel-reopen panel-reopen-right" data-action="toggle-inspector" aria-label="Open inspector panel" title="Open inspector panel">Inspector</button>' : ""}
     </main>
   `;
 
@@ -168,6 +178,20 @@ function bindEvents(): void {
       render();
     },
   );
+
+  appRoot.querySelectorAll('[data-action="toggle-left-rail"]').forEach((button) => {
+    button.addEventListener("click", () => {
+      leftRailCollapsed = !leftRailCollapsed;
+      render();
+    });
+  });
+
+  appRoot.querySelectorAll('[data-action="toggle-inspector"]').forEach((button) => {
+    button.addEventListener("click", () => {
+      inspectorCollapsed = !inspectorCollapsed;
+      render();
+    });
+  });
 
   appRoot.querySelector('[data-action="toggle-export"]')?.addEventListener(
     "click",

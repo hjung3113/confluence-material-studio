@@ -102,6 +102,7 @@ export function buildGrapesEditorConfig(
       scripts: [],
       styles: [],
       frameStyle: `
+        html, body { min-height: 100%; background: #ffffff; }
         body { margin: 0; color: #172033; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
         * { box-sizing: border-box; }
         main.material-sample { min-height: 620px; padding: 48px; }

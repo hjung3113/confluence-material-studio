@@ -63,6 +63,8 @@ async function runSmoke(page: Page, url: string): Promise<void> {
     "Loading visual canvas. Document controls remain available.",
     "Click text or sections to select. Export remains core-backed.",
   ]);
+  await expectCanvasChromeStyle(page);
+  await expectPanelCollapseControls(page);
   assertNoExternalRequests(requestedUrls);
   await expectTextAbsent(page, "Ecommerce");
   await expectTextAbsent(page, "Script widget");
@@ -422,6 +424,56 @@ async function expectControlValue(
     expectedValue,
     `${selector} should reflect the current control value.`,
   );
+}
+
+async function expectCanvasChromeStyle(page: Page): Promise<void> {
+  const canvasBackground = await page
+    .locator(".gjs-cv-canvas-bg")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+
+  assertEqual(
+    canvasBackground,
+    "rgb(255, 255, 255)",
+    "GrapesJS canvas chrome should not darken imported HTML.",
+  );
+
+  const frame = page.frameLocator("iframe").first();
+  const frameBodyBackground = await frame
+    .locator("body")
+    .evaluate((body) => getComputedStyle(body).backgroundColor);
+
+  assertEqual(
+    frameBodyBackground,
+    "rgb(255, 255, 255)",
+    "Imported HTML iframe should have an explicit light background.",
+  );
+}
+
+async function expectPanelCollapseControls(page: Page): Promise<void> {
+  const canvasFrame = page.locator(".canvas-frame");
+  const initialCanvasWidth = await canvasFrame.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+
+  await page.getByRole("button", { name: "Collapse document panel" }).click();
+  await page.getByRole("button", { name: "Collapse inspector panel" }).click();
+  await page.locator('.studio-shell[data-left-rail="collapsed"]').waitFor();
+  await page.locator('.studio-shell[data-inspector="collapsed"]').waitFor();
+
+  const expandedCanvasWidth = await canvasFrame.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+
+  if (expandedCanvasWidth < initialCanvasWidth) {
+    throw new Error(
+      `Collapsed panels should not make the canvas narrower. Initial ${initialCanvasWidth}, collapsed ${expandedCanvasWidth}.`,
+    );
+  }
+
+  await page.getByRole("button", { name: "Open document panel" }).click();
+  await page.getByRole("button", { name: "Open inspector panel" }).click();
+  await page.locator('.studio-shell[data-left-rail="expanded"]').waitFor();
+  await page.locator('.studio-shell[data-inspector="expanded"]').waitFor();
 }
 
 async function expectFrameComputedStyle(
